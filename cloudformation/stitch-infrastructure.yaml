@@ -21,6 +21,11 @@ Parameters:
     Default: 'latest'
     Description: 'Git commit hash for versioning Lambda deployments'
 
+  StitchFunctionCodeKey:
+    Type: String
+    Default: 'stitch/lambda/lambda-dev-latest.zip'
+    Description: 'S3 key for Stitch Lambda function code'
+
   # Certificate ARNs for custom domains
   AcmCertArnApiRegion:
     Type: String
@@ -156,7 +161,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: !Sub 'stitch/lambda/lambda-${Environment}-${GitCommit}.zip'
+        S3Key: !Ref StitchFunctionCodeKey
       MemorySize: 512
       Timeout: 30
       Environment:

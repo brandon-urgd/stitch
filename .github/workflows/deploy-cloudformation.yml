@@ -122,6 +122,7 @@ jobs:
         [
           {"ParameterKey": "Environment", "ParameterValue": "$env"},
           {"ParameterKey": "GitCommit", "ParameterValue": "$VERSION"},
+          {"ParameterKey": "StitchFunctionCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/stitch-function-$VERSION.zip"},
           {"ParameterKey": "AcmCertArnApiRegion", "ParameterValue": "arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935"},
           {"ParameterKey": "AcmCertArnCloudFront", "ParameterValue": "arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47"},
           {"ParameterKey": "UrgdDevHostedZoneId", "ParameterValue": "Z01725332W8W14423YXSC"},
@@ -192,9 +193,10 @@ jobs:
         GIT_COMMIT=$(git rev-parse --short HEAD)
         echo "📦 Git commit: $GIT_COMMIT"
         
-        # Upload Lambda package to lambda folder
-        aws s3 cp lambda-package.zip s3://urgd-applicationdata/stitch/lambda/lambda-${ENVIRONMENT}-${GIT_COMMIT}.zip
-        echo "✅ Lambda package uploaded to S3 lambda folder"
+        # Upload Lambda package to artifacts folder (broadcast style)
+        VERSION="${{ needs.version.outputs.version }}"
+        aws s3 cp lambda-package.zip s3://urgd-applicationdata/stitch/artifacts/${VERSION}/stitch-function-${VERSION}.zip
+        echo "✅ Lambda package uploaded to S3 artifacts folder"
         
         # Upload CloudFormation template to cloudformation folder
         # Upload versioned template and parameters to S3
