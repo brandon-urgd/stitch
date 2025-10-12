@@ -41,9 +41,15 @@ jobs:
         # Check if this is a manual workflow dispatch first
         if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ -n "$GITHUB_INPUT_ENVIRONMENT" ]; then
           echo "ENVIRONMENT=$GITHUB_INPUT_ENVIRONMENT" >> $GITHUB_ENV
+          if [ "$GITHUB_INPUT_ENVIRONMENT" = "prod" ]; then
+            echo "WAF_ENVIRONMENT=prod" >> $GITHUB_ENV
+          else
+            echo "WAF_ENVIRONMENT=nonprod" >> $GITHUB_ENV
+          fi
           echo "environment=$GITHUB_INPUT_ENVIRONMENT" >> $GITHUB_OUTPUT
         elif [ "$GITHUB_REF" = "refs/heads/main" ]; then
           echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+          echo "WAF_ENVIRONMENT=nonprod" >> $GITHUB_ENV
           echo "environment=dev" >> $GITHUB_OUTPUT
         else
           echo "❌ Invalid workflow trigger: $GITHUB_EVENT_NAME on $GITHUB_REF"
@@ -103,9 +109,24 @@ jobs:
         echo "✅ CloudFormation template uploaded to S3 cloudformation folder"
         
     - name: Deploy CloudFormation Stack
+      id: cloudfront
       run: |
         chmod +x scripts/deploy-cloudformation.sh
         ./scripts/deploy-cloudformation.sh ${{ env.ENVIRONMENT }}
+        
+        # Get CloudFront Distribution ID for WAF association
+        STACK_NAME="urgd-stitch-${{ env.ENVIRONMENT }}"
+        REGION="${{ secrets.AWS_REGION || 'us-west-2' }}"
+        
+        CLOUDFRONT_ID=$(aws cloudformation describe-stacks \
+          --stack-name "$STACK_NAME" \
+          --region "$REGION" \
+          --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
+          --output text)
+        
+        echo "CLOUDFRONT_ID=$CLOUDFRONT_ID" >> $GITHUB_OUTPUT
+        echo "✅ CloudFront Distribution ID: $CLOUDFRONT_ID"
+
         
     - name: Upload website to S3
       run: |
@@ -180,12 +201,14 @@ jobs:
       id: waf
       if: steps.cloudfront.outputs.CLOUDFRONT_ID != ''
       run: |
+        ENVIRONMENT="${{ env.ENVIRONMENT }}"
+        WAF_ENVIRONMENT="${{ env.WAF_ENVIRONMENT }}"
         CLOUDFRONT_ID="${{ steps.cloudfront.outputs.CLOUDFRONT_ID }}"
         
         echo "🔗 Associating WAF with CloudFront..."
         
-        # Use prod WAF since we're not doing separate environments
-        WAF_SSM_PARAM="/urgd/waf/prod/web_acl_arn"
+        # Use environment-aware WAF
+        WAF_SSM_PARAM="/urgd/waf/$WAF_ENVIRONMENT/web_acl_arn"
         
         WAF_ARN=$(aws ssm get-parameter \
           --name "$WAF_SSM_PARAM" \
@@ -234,7 +257,7 @@ jobs:
         
     - name: Get deployment URLs
       run: |
-        STACK_NAME="urgd-stitch-infrastructure"
+        STACK_NAME="urgd-stitch-${{ env.ENVIRONMENT }}"
         REGION="${{ secrets.AWS_REGION || 'us-west-2' }}"
         CLOUDFRONT_ID="${{ steps.cloudfront.outputs.CLOUDFRONT_ID }}"
         WAF_ARN="${{ steps.waf.outputs.WAF_ARN }}"

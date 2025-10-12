@@ -262,6 +262,7 @@ Resources:
   # API Gateway Base Path Mapping
   StitchApiGatewayBasePathMapping:
     Type: AWS::ApiGateway::BasePathMapping
+    DependsOn: StitchApiGatewayDeployment
     Properties:
       DomainName: !Ref StitchApiGatewayDomainName
       RestApiId: !Ref StitchApiGateway
