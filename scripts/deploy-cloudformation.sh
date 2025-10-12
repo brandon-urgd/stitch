@@ -4,7 +4,7 @@
 set -e
 
 ENVIRONMENT=${1:-dev}
-STACK_NAME="urgd-stitch-infrastructure-${ENVIRONMENT}"
+STACK_NAME="urgd-stitch-${ENVIRONMENT}"
 TEMPLATE_URL="https://urgd-applicationdata.s3.amazonaws.com/stitch/cloudformation/stitch-infrastructure.yaml"
 REGION="${AWS_REGION:-us-west-2}"
 

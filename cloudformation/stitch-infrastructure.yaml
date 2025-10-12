@@ -275,8 +275,8 @@ Resources:
       Name: !Sub 'api-${Environment}.stitch.urgd.dev'
       Type: A
       AliasTarget:
-        DNSName: !GetAtt StitchApiGatewayDomainName.DistributionDomainName
-        HostedZoneId: !GetAtt StitchApiGatewayDomainName.DistributionHostedZoneId
+        DNSName: !GetAtt StitchApiGatewayDomainName.RegionalDomainName
+        HostedZoneId: !GetAtt StitchApiGatewayDomainName.RegionalHostedZoneId
 
   # CloudFront Distribution
   StitchCloudFrontDistribution:
