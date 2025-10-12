@@ -77,6 +77,64 @@ jobs:
             --lifecycle-configuration file://lifecycle.json
         fi
           
+    - name: Create Lambda execution role
+      run: |
+        # Create trust policy
+        cat > trust-policy.json << EOF
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        }
+        EOF
+        
+        # Create role if it doesn't exist
+        if ! aws iam get-role --role-name lambda-execution-role >/dev/null 2>&1; then
+          aws iam create-role \
+            --role-name lambda-execution-role \
+            --assume-role-policy-document file://trust-policy.json
+        fi
+          
+        # Attach policies (idempotent - won't fail if already attached)
+        aws iam attach-role-policy \
+          --role-name lambda-execution-role \
+          --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole || true
+          
+        # Create S3 policy
+        cat > s3-policy.json << EOF
+        {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject"
+              ],
+              "Resource": "arn:aws:s3:::urgd-stitch-storage/*"
+            }
+          ]
+        }
+        EOF
+        
+        # Update role policy (will overwrite if exists)
+        aws iam put-role-policy \
+          --role-name lambda-execution-role \
+          --policy-name S3Access \
+          --policy-document file://s3-policy.json
+          
+        # Wait for role to be ready
+        echo "Waiting for IAM role to be ready..."
+        sleep 10
+        
     - name: Create or update Lambda layer
       run: |
         # Check if layer exists first
@@ -144,60 +202,6 @@ jobs:
           fi
         fi
         
-    - name: Create Lambda execution role
-      run: |
-        # Create trust policy
-        cat > trust-policy.json << EOF
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "lambda.amazonaws.com"
-              },
-              "Action": "sts:AssumeRole"
-            }
-          ]
-        }
-        EOF
-        
-        # Create role if it doesn't exist
-        if ! aws iam get-role --role-name lambda-execution-role >/dev/null 2>&1; then
-          aws iam create-role \
-            --role-name lambda-execution-role \
-            --assume-role-policy-document file://trust-policy.json
-        fi
-          
-        # Attach policies (idempotent - won't fail if already attached)
-        aws iam attach-role-policy \
-          --role-name lambda-execution-role \
-          --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole || true
-          
-        # Create S3 policy
-        cat > s3-policy.json << EOF
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Action": [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:DeleteObject"
-              ],
-              "Resource": "arn:aws:s3:::urgd-stitch-storage/*"
-            }
-          ]
-        }
-        EOF
-        
-        # Update role policy (will overwrite if exists)
-        aws iam put-role-policy \
-          --role-name lambda-execution-role \
-          --policy-name S3Access \
-          --policy-document file://s3-policy.json
-          
     - name: Create or update Function URL
       run: |
         # Check if Function URL exists
