@@ -249,7 +249,7 @@ Resources:
     Type: AWS::ApiGateway::DomainName
     Properties:
       DomainName: 'api.stitch.urgd.dev'
-      CertificateArn: !Ref AcmCertArnApiRegion
+      RegionalCertificateArn: !Ref AcmCertArnApiRegion
       EndpointConfiguration:
         Types:
           - REGIONAL
