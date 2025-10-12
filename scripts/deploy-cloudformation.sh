@@ -17,7 +17,8 @@ if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGI
         --template-body "file://$TEMPLATE_FILE" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
-        --parameters ParameterKey=DomainName,ParameterValue="urgdstudios.com" \
+        --parameters ParameterKey=Environment,ParameterValue="prod" \
+                   ParameterKey=DomainName,ParameterValue="urgdstudios.com" \
                    ParameterKey=Subdomain,ParameterValue="stitch" \
                    ParameterKey=CertificateArn,ParameterValue="arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595"
     
@@ -32,7 +33,8 @@ else
         --template-body "file://$TEMPLATE_FILE" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
-        --parameters ParameterKey=DomainName,ParameterValue="urgdstudios.com" \
+        --parameters ParameterKey=Environment,ParameterValue="prod" \
+                   ParameterKey=DomainName,ParameterValue="urgdstudios.com" \
                    ParameterKey=Subdomain,ParameterValue="stitch" \
                    ParameterKey=CertificateArn,ParameterValue="arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595"
     

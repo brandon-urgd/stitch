@@ -2,6 +2,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Stitch SVG to PES Converter - Complete Infrastructure'
 
 Parameters:
+  Environment:
+    Type: String
+    Default: 'prod'
+    Description: 'Environment name (prod, dev, staging)'
+    AllowedValues: ['prod', 'dev', 'staging']
+  
   DomainName:
     Type: String
     Default: 'urgdstudios.com'
@@ -30,7 +36,7 @@ Resources:
   StitchStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: 'urgd-stitch-storage'
+      BucketName: !Sub 'urgd-stitch-storage-${Environment}-${AWS::AccountId}'
       LifecycleConfiguration:
         Rules:
           - Id: DeleteTempFiles
@@ -47,7 +53,7 @@ Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: 'urgd-lambda-execution-role'
+      RoleName: !Sub 'urgd-stitch-lambda-role-${Environment}'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -73,7 +79,7 @@ Resources:
   StitchLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: 'urgd-stitch-libs'
+      LayerName: !Sub 'urgd-stitch-libs-${Environment}'
       Description: 'Dependencies for Stitch SVG to PES converter'
       Content:
         S3Bucket: !Ref StitchStorageBucket
@@ -85,7 +91,7 @@ Resources:
   StitchFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: 'urgd-stitch'
+      FunctionName: !Sub 'urgd-stitch-${Environment}'
       Runtime: python3.11
       Handler: lambda_function.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
