@@ -278,23 +278,20 @@ Resources:
       RestApiId: !Ref StitchApiGateway
       Stage: !Ref StitchApiGatewayDeployment
 
-  # CloudFront Distribution
+  # CloudFront Distribution (simplified - no custom domain)
   StitchCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
-    Condition: HasCertificate
     Properties:
       DistributionConfig:
         Comment: !Sub 'Stitch SVG to PES Converter - ${Subdomain}.${DomainName}'
         Enabled: true
-        Aliases:
-          - !Sub '${Subdomain}.${DomainName}'
         Origins:
           - Id: StitchWebsiteOrigin
             DomainName: !GetAtt StitchWebsiteBucket.RegionalDomainName
             S3OriginConfig:
               OriginAccessIdentity: ''
           - Id: StitchApiOrigin
-            DomainName: !Sub 'api.${Subdomain}.urgd.dev'
+            DomainName: !Sub '${StitchApiGateway}.execute-api.${AWS::Region}.amazonaws.com'
             CustomOriginConfig:
               HTTPPort: 443
               HTTPSPort: 443
@@ -341,39 +338,35 @@ Resources:
             MinTTL: 0
             DefaultTTL: 0
             MaxTTL: 0
-        ViewerCertificate:
-          AcmCertificateArn: !Ref CertificateArn
-          SslSupportMethod: sni-only
-          MinimumProtocolVersion: TLSv1.2_2021
       Tags:
         - Key: brand
           Value: urgd
         - Key: project
           Value: stitch
 
-  # Route 53 Record
-  StitchDNSRecord:
-    Type: AWS::Route53::RecordSet
-    Condition: HasCertificate
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      Name: !Sub '${Subdomain}.${DomainName}'
-      Type: CNAME
-      TTL: 300
-      ResourceRecords:
-        - !GetAtt StitchCloudFrontDistribution.DomainName
+  # Route 53 Record (commented out - using CloudFront default domain)
+  # StitchDNSRecord:
+  #   Type: AWS::Route53::RecordSet
+  #   Condition: HasCertificate
+  #   Properties:
+  #     HostedZoneId: !Ref HostedZoneId
+  #     Name: !Sub '${Subdomain}.${DomainName}'
+  #     Type: CNAME
+  #     TTL: 300
+  #     ResourceRecords:
+  #       - !GetAtt StitchCloudFrontDistribution.DomainName
 
-  # Route 53 Record for API domain
-  StitchApiDNSRecord:
-    Type: AWS::Route53::RecordSet
-    Condition: HasCertificate
-    Properties:
-      HostedZoneId: !Ref HostedZoneId
-      Name: !Sub 'api.${Subdomain}.urgd.dev'
-      Type: CNAME
-      TTL: 300
-      ResourceRecords:
-        - !GetAtt StitchApiDomainName.RegionalDomainName
+  # Route 53 Record for API domain (commented out - using standard API Gateway URL)
+  # StitchApiDNSRecord:
+  #   Type: AWS::Route53::RecordSet
+  #   Condition: HasCertificate
+  #   Properties:
+  #     HostedZoneId: !Ref HostedZoneId
+  #     Name: !Sub 'api.${Subdomain}.urgd.dev'
+  #     Type: CNAME
+  #     TTL: 300
+  #     ResourceRecords:
+  #       - !GetAtt StitchApiDomainName.RegionalDomainName
 
 Outputs:
   WebsiteUrl:
@@ -397,24 +390,15 @@ Outputs:
   
   CloudFrontDistributionId:
     Description: 'CloudFront Distribution ID'
-    Condition: HasCertificate
     Value: !Ref StitchCloudFrontDistribution
     Export:
       Name: !Sub '${AWS::StackName}-CloudFrontDistributionId'
   
   CloudFrontUrl:
     Description: 'CloudFront Distribution URL'
-    Condition: HasCertificate
     Value: !Sub 'https://${StitchCloudFrontDistribution.DomainName}'
     Export:
       Name: !Sub '${AWS::StackName}-CloudFrontUrl'
-  
-  CustomDomainUrl:
-    Description: 'Custom domain URL'
-    Condition: HasCertificate
-    Value: !Sub 'https://${Subdomain}.${DomainName}'
-    Export:
-      Name: !Sub '${AWS::StackName}-CustomDomainUrl'
   
   S3BucketName:
     Description: 'S3 bucket for temporary file storage'
