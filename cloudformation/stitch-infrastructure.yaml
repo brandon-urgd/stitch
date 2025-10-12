@@ -228,6 +228,7 @@ Resources:
       DistributionConfig:
         Comment: !Sub 'Stitch SVG to PES Converter - ${Environment}'
         Enabled: true
+        DefaultRootObject: index.html
         Origins:
           - Id: StitchWebsiteOrigin
             DomainName: !GetAtt StitchWebsiteBucket.RegionalDomainName
