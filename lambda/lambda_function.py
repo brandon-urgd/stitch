@@ -69,6 +69,13 @@ def serve_frontend():
         # Read the embedded HTML file
         html_content = get_frontend_html()
         
+        # Inject the API Gateway endpoint
+        api_endpoint = f"https://{os.environ.get('API_GATEWAY_DOMAIN', '')}/api"
+        html_content = html_content.replace(
+            'const apiEndpoint = window.API_ENDPOINT || \'/api\';',
+            f'const apiEndpoint = \'{api_endpoint}\';'
+        )
+        
         return {
             'statusCode': 200,
             'headers': {
@@ -328,7 +335,9 @@ def get_frontend_html():
                     progressFill.style.width = progress + '%';
                 }, 200);
                 
-                const response = await fetch(window.location.href, { method: 'POST', body: formData });
+                // Use the API Gateway endpoint for conversion
+                const apiEndpoint = window.API_ENDPOINT || '/api';
+                const response = await fetch(apiEndpoint, { method: 'POST', body: formData });
                 clearInterval(progressInterval);
                 progressFill.style.width = '100%';
                 progressText.textContent = 'Complete!';
