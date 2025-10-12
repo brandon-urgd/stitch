@@ -29,8 +29,13 @@ Parameters:
   
   CertificateArn:
     Type: String
-    Description: 'ARN of the SSL certificate for the domain (must be in us-east-1)'
+    Description: 'ARN of the SSL certificate for the domain (must be in us-east-1 for CloudFront)'
     Default: 'arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595'
+  
+  ApiCertificateArn:
+    Type: String
+    Description: 'ARN of the SSL certificate for API Gateway (us-west-2)'
+    Default: 'arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935'
   
   HostedZoneId:
     Type: String
@@ -174,7 +179,7 @@ Resources:
       Description: 'API Gateway for Stitch SVG to PES converter API'
       EndpointConfiguration:
         Types:
-          - EDGE
+          - REGIONAL
       BinaryMediaTypes:
         - '*/*'
       Tags:
@@ -254,10 +259,10 @@ Resources:
     Condition: HasCertificate
     Properties:
       DomainName: !Sub 'api.${Subdomain}.urgd.dev'
-      CertificateArn: !Ref CertificateArn
+      CertificateArn: !Ref ApiCertificateArn
       EndpointConfiguration:
         Types:
-          - EDGE
+          - REGIONAL
       Tags:
         - Key: brand
           Value: urgd
