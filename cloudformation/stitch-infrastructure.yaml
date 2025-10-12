@@ -267,6 +267,7 @@ Resources:
       DomainName: !Ref StitchApiGatewayDomainName
       RestApiId: !Ref StitchApiGateway
       Stage: !Ref Environment
+      BasePath: !Ref Environment
 
   # Route 53 Record for API Gateway
   StitchApiGatewayDnsRecord:
