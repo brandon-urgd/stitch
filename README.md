@@ -1,85 +1,133 @@
 # Stitch - SVG to PES Embroidery Converter
 
-A lightweight web-based converter that transforms SVG files into PES embroidery format using AWS Lambda. Built by ur/gd with production-grade accuracy and reliability.
+**🎉 LIVE SERVICE** - A production-ready web application that converts SVG files to PES embroidery format using AWS infrastructure.
 
-## Overview
+## 🌐 Live Website
 
-Stitch provides a simple web interface for converting SVG files to PES format for embroidery machines. The entire conversion happens server-side, requiring only a web browser on the user's computer.
+**Visit: https://d3mjr86znz3p8h.cloudfront.net**
 
-## Architecture
+Simply upload an SVG file and get a perfectly formatted PES file for your embroidery machine!
 
-- **AWS Lambda Function** with Function URL (no API Gateway needed)
-- **S3 Bucket** for temporary file storage
-- **libpes/pyembroidery** for SVG to PES conversion
-- **Embedded HTML/JS frontend** served directly from Lambda
+## ✨ Features
 
-## Usage
+- **Drag & Drop Interface** - Easy file upload with visual feedback
+- **Real-time Conversion** - Server-side processing with progress indicators
+- **Production Quality** - Uses pyembroidery library for accurate conversions
+- **Instant Download** - Get your PES file immediately after conversion
+- **Mobile Friendly** - Responsive design works on all devices
+- **ur/gd Branding** - Professional design with ur/gd visual identity
 
-1. Open the Lambda Function URL in your browser
-2. Click "Choose File" and select an SVG file
-3. Click "Convert to PES"
-4. Wait for conversion to complete
-5. PES file automatically downloads
+## 🏗️ Architecture
 
-## Development
+- **Frontend**: CloudFront + S3 static website hosting
+- **Backend**: AWS Lambda with pyembroidery library
+- **API**: API Gateway for secure file processing
+- **Storage**: S3 buckets for temporary files and converted outputs
+- **Security**: Origin Access Control (OAC) for secure S3 access
 
-### Local Setup
+## 🚀 Deployment
 
-```bash
-# Install dependencies
-pip install -r lambda/requirements.txt
+The application uses a fully automated CI/CD pipeline:
 
-# Test locally
-python lambda/lambda_function.py
+1. **Code Push** → GitHub Actions triggers
+2. **Lambda Build** → Dependencies installed and packaged
+3. **S3 Upload** → Artifacts uploaded to versioned folders
+4. **CloudFormation** → Infrastructure deployed/updated
+5. **Website Update** → Static files deployed with dynamic API URLs
+
+### S3 Structure
+```
+urgd-applicationdata/stitch/
+├── lambda/                    # Lambda deployment packages
+│   └── lambda-prod-{commit}.zip
+├── cloudformation/            # Infrastructure templates
+│   └── stitch-infrastructure.yaml
+└── website/                   # Static website files
+    ├── index.html
+    └── assets/
 ```
 
-### Deployment
+## 🛠️ Development
 
-The repository uses GitHub Actions for automatic deployment:
+### Local Testing
+```bash
+# Test Lambda function locally
+cd lambda
+pip install -r requirements.txt
+python lambda_function.py
 
-1. Push to `main` branch
-2. GitHub Actions builds and deploys to AWS
-3. Function URL is output in the workflow logs
+# Test with sample SVG
+curl -X POST -F "file=@test-heart.svg" https://your-api-gateway-url/prod/api
+```
 
-### Required GitHub Secrets
+### Adding New Formats
+The architecture supports easy addition of new embroidery formats:
 
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `AWS_REGION` (default: us-east-1)
+1. Update `lambda/lambda_function.py` with new format support
+2. Modify `website/index.html` to include format selection
+3. Push changes - automatic deployment handles the rest
 
-## File Structure
+**Supported by pyembroidery:**
+- PES (Brother) ✅ *Currently implemented*
+- DST (Tajima)
+- EXP (Melco) 
+- HUS (Husqvarna)
+- JEF (Janome)
+- VP3 (Husqvarna)
+- XXX (Singer)
+
+## 📁 Repository Structure
 
 ```
 stitch/
-├── .github/workflows/deploy.yml    # GitHub Actions workflow
+├── .github/workflows/
+│   └── deploy-cloudformation.yml    # CI/CD pipeline
+├── cloudformation/
+│   └── stitch-infrastructure.yaml   # AWS infrastructure
 ├── lambda/
-│   ├── lambda_function.py          # Main Lambda handler
-│   ├── requirements.txt            # Python dependencies
-│   └── frontend.html               # Embedded HTML interface
+│   ├── lambda_function.py           # Main conversion logic
+│   └── requirements.txt             # Python dependencies
+├── website/
+│   ├── index.html                   # Frontend interface
+│   └── assets/                      # Fonts, logos, etc.
 ├── scripts/
-│   └── build-layer.sh              # Build Lambda layer locally
+│   └── deploy-cloudformation.sh     # Deployment script
 └── README.md
 ```
 
-## AWS Resources
+## 🔧 AWS Resources
 
-- **S3 Bucket**: `urgd-stitch-storage`
-- **Lambda Function**: `urgd-stitch`
-- **Lambda Layer**: `urgd-stitch-libs`
+- **CloudFront Distribution**: Global CDN for fast website delivery
+- **S3 Website Bucket**: Static website hosting
+- **S3 Storage Bucket**: Temporary file storage
+- **Lambda Function**: SVG to PES conversion engine
+- **API Gateway**: RESTful API for file processing
+- **IAM Roles**: Secure permissions for all services
 
-## ur/gd Branding
+## 🎨 ur/gd Branding
 
-The application features ur/gd branding including:
-- ur/gd logo prominently displayed
-- Archivo and Rubik font families
-- Consistent ur/gd visual identity
-- "Powered by ur/gd" attribution
+- **Logo**: Prominent ur/gd logo with custom styling
+- **Typography**: Archivo Bold + Rubik Regular fonts
+- **Colors**: Professional gradient design
+- **Attribution**: "Powered by ur/gd studios" with link
 
-## Conversion Quality
+## 🔒 Security & Quality
 
-The converter uses production-grade libraries to ensure accurate SVG to PES conversion:
+- **Input Validation**: SVG file type verification
+- **Error Handling**: Graceful failure with user feedback
+- **File Cleanup**: Automatic temporary file deletion
+- **CORS Support**: Proper cross-origin headers
+- **HTTPS Only**: All traffic encrypted
 
-- Handles complex SVG paths and shapes
-- Maintains proper stitch density and patterns
-- Supports various SVG units (px, mm, inches)
-- Validates output PES files for embroidery machine compatibility
+## 📊 Performance
+
+- **Global CDN**: CloudFront edge locations worldwide
+- **Serverless**: Pay-per-use Lambda scaling
+- **Fast Conversion**: Optimized pyembroidery processing
+- **Efficient Storage**: Lifecycle policies for cleanup
+
+---
+
+**Built with ❤️ by ur/gd studios**
+
+*Professional embroidery conversion made simple*

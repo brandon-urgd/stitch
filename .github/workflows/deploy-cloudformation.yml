@@ -48,9 +48,9 @@ jobs:
         GIT_COMMIT=$(git rev-parse --short HEAD)
         echo "📦 Git commit: $GIT_COMMIT"
         
-        # Upload Lambda package to artifacts folder
-        aws s3 cp lambda-package.zip s3://urgd-applicationdata/stitch/artifacts/lambda-prod-${GIT_COMMIT}.zip
-        echo "✅ Lambda package uploaded to S3 artifacts folder"
+        # Upload Lambda package to lambda folder
+        aws s3 cp lambda-package.zip s3://urgd-applicationdata/stitch/lambda/lambda-prod-${GIT_COMMIT}.zip
+        echo "✅ Lambda package uploaded to S3 lambda folder"
         
         # Upload CloudFormation template to cloudformation folder
         aws s3 cp cloudformation/stitch-infrastructure.yaml s3://urgd-applicationdata/stitch/cloudformation/stitch-infrastructure.yaml

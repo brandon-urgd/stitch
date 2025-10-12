@@ -128,7 +128,7 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: !Sub 'stitch/artifacts/lambda-${Environment}-${GitCommit}.zip'
+        S3Key: !Sub 'stitch/lambda/lambda-${Environment}-${GitCommit}.zip'
       MemorySize: 512
       Timeout: 30
       Environment:
