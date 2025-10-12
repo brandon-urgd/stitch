@@ -213,6 +213,7 @@ Resources:
   # CloudFront Distribution
   StitchCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
+    DependsOn: StitchWebsiteBucketPolicy
     Properties:
       DistributionConfig:
         Comment: !Sub 'Stitch SVG to PES Converter - ${Environment}'
