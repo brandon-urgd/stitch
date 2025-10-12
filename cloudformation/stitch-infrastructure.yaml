@@ -15,6 +15,11 @@ Parameters:
     Default: 'prod'
     Description: 'Environment name (prod, dev, staging)'
     AllowedValues: ['prod', 'dev', 'staging']
+  
+  GitCommit:
+    Type: String
+    Default: 'latest'
+    Description: 'Git commit hash for versioning Lambda deployments'
 
 Resources:
   # S3 Bucket for user temporary file storage
@@ -122,12 +127,8 @@ Resources:
       Handler: lambda_function.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        ZipFile: |
-          def lambda_handler(event, context):
-              return {
-                  'statusCode': 200,
-                  'body': 'Hello from Stitch Lambda!'
-              }
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: !Sub 'stitch/artifacts/lambda-${Environment}-${GitCommit}.zip'
       MemorySize: 512
       Timeout: 30
       Environment:

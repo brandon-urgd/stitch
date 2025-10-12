@@ -18,7 +18,7 @@ except ImportError:
     print("Warning: pyembroidery library not available, using fallback conversion")
 
 s3_client = boto3.client('s3')
-BUCKET_NAME = 'urgd-stitch-storage'
+BUCKET_NAME = os.environ.get('BUCKET_NAME', 'urgd-stitch-storage')
 
 def lambda_handler(event, context):
     """

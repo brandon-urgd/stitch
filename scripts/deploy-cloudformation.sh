@@ -4,8 +4,12 @@
 set -e
 
 STACK_NAME="urgd-stitch-infrastructure"
-TEMPLATE_FILE="cloudformation/stitch-infrastructure.yaml"
+TEMPLATE_URL="https://urgd-applicationdata.s3.amazonaws.com/stitch/cloudformation/stitch-infrastructure.yaml"
 REGION="${AWS_REGION:-us-west-2}"
+
+# Get current git commit hash
+GIT_COMMIT=$(git rev-parse --short HEAD)
+echo "📦 Git commit: $GIT_COMMIT"
 
 echo "🚀 Deploying Stitch infrastructure with CloudFormation..."
 
@@ -14,10 +18,10 @@ if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGI
     echo "📝 Updating existing CloudFormation stack..."
     aws cloudformation update-stack \
         --stack-name "$STACK_NAME" \
-        --template-body "file://$TEMPLATE_FILE" \
+        --template-url "$TEMPLATE_URL" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
-        --parameters ParameterKey=Environment,ParameterValue="prod"
+        --parameters ParameterKey=Environment,ParameterValue="prod" ParameterKey=GitCommit,ParameterValue="$GIT_COMMIT"
     
     echo "⏳ Waiting for stack update to complete..."
     aws cloudformation wait stack-update-complete \
@@ -27,10 +31,10 @@ else
     echo "🆕 Creating new CloudFormation stack..."
     aws cloudformation create-stack \
         --stack-name "$STACK_NAME" \
-        --template-body "file://$TEMPLATE_FILE" \
+        --template-url "$TEMPLATE_URL" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
-        --parameters ParameterKey=Environment,ParameterValue="prod"
+        --parameters ParameterKey=Environment,ParameterValue="prod" ParameterKey=GitCommit,ParameterValue="$GIT_COMMIT"
     
     echo "⏳ Waiting for stack creation to complete..."
     aws cloudformation wait stack-create-complete \
