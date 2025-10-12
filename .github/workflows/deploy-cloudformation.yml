@@ -60,12 +60,106 @@ jobs:
         chmod +x scripts/deploy-cloudformation.sh
         ./scripts/deploy-cloudformation.sh
         
-    - name: Get deployment URLs
+    - name: Get CloudFront Distribution ID
+      id: cloudfront
       run: |
-        STACK_NAME="stitch-infrastructure"
+        STACK_NAME="urgd-stitch-infrastructure"
         REGION="${{ secrets.AWS_REGION || 'us-west-2' }}"
         
-        echo "📋 Deployment Summary:"
+        CLOUDFRONT_ID=$(aws cloudformation describe-stacks \
+          --stack-name "$STACK_NAME" \
+          --region "$REGION" \
+          --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
+          --output text)
+        
+        if [ "$CLOUDFRONT_ID" = "None" ] || [ -z "$CLOUDFRONT_ID" ]; then
+          echo "ℹ️  No CloudFront distribution found in stack outputs"
+          echo "CLOUDFRONT_ID=" >> $GITHUB_OUTPUT
+        else
+          echo "✅ CloudFront Distribution ID: $CLOUDFRONT_ID"
+          echo "CLOUDFRONT_ID=$CLOUDFRONT_ID" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Configure AWS credentials (us-east-1)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+        
+    - name: Associate WAF with CloudFront
+      id: waf
+      if: steps.cloudfront.outputs.CLOUDFRONT_ID != ''
+      run: |
+        CLOUDFRONT_ID="${{ steps.cloudfront.outputs.CLOUDFRONT_ID }}"
+        
+        echo "🔗 Associating WAF with CloudFront..."
+        
+        # Use prod WAF since we're not doing separate environments
+        WAF_SSM_PARAM="/urgd/waf/prod/web_acl_arn"
+        
+        WAF_ARN=$(aws ssm get-parameter \
+          --name "$WAF_SSM_PARAM" \
+          --query 'Parameter.Value' \
+          --output text \
+          --region us-east-1)
+        
+        if [ "$WAF_ARN" = "None" ] || [ -z "$WAF_ARN" ]; then
+          echo "❌ WAF ARN not found in SSM parameter: $WAF_SSM_PARAM"
+          exit 1
+        fi
+        
+        echo "✅ WAF ARN: $WAF_ARN"
+        echo "WAF_ARN=$WAF_ARN" >> $GITHUB_OUTPUT
+        echo "✅ CloudFront Distribution ID: $CLOUDFRONT_ID"
+        
+        # Get AWS Account ID
+        AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text --region us-east-1)
+        echo "✅ AWS Account ID: $AWS_ACCOUNT_ID"
+        
+        # Get the current distribution configuration
+        echo "📋 Getting current distribution configuration..."
+        aws cloudfront get-distribution-config \
+          --id "$CLOUDFRONT_ID" \
+          --region us-east-1 > /tmp/distribution-response.json
+        
+        ETAG=$(jq -r '.ETag' /tmp/distribution-response.json)
+        echo "✅ ETag: $ETAG"
+        
+        # Extract the distribution config
+        jq '.DistributionConfig' /tmp/distribution-response.json > /tmp/distribution-config.json
+        
+        # Add WAF to the distribution configuration
+        echo "🔧 Adding WAF to distribution configuration..."
+        jq --arg webacl "$WAF_ARN" '.WebACLId = $webacl' /tmp/distribution-config.json > /tmp/distribution-config-updated.json
+        
+        # Update the CloudFront distribution
+        echo "🚀 Updating CloudFront distribution with WAF..."
+        aws cloudfront update-distribution \
+          --id "$CLOUDFRONT_ID" \
+          --distribution-config file:///tmp/distribution-config-updated.json \
+          --if-match "$ETAG" \
+          --region us-east-1
+        
+        echo "✅ WAF successfully associated with CloudFront distribution"
+        
+    - name: Get deployment URLs
+      run: |
+        STACK_NAME="urgd-stitch-infrastructure"
+        REGION="${{ secrets.AWS_REGION || 'us-west-2' }}"
+        CLOUDFRONT_ID="${{ steps.cloudfront.outputs.CLOUDFRONT_ID }}"
+        WAF_ARN="${{ steps.waf.outputs.WAF_ARN }}"
+        
+        echo "🎉 Deployment Summary"
+        echo "==================="
+        echo "Stack Name: $STACK_NAME"
+        echo "Region: $REGION"
+        echo "CloudFront Distribution ID: $CLOUDFRONT_ID"
+        echo "WAF ARN: $WAF_ARN"
+        echo "Deployed by: $GITHUB_ACTOR"
+        echo "Workflow run: $GITHUB_RUN_ID"
+        echo "Commit: $GITHUB_SHA"
+        echo ""
         echo "===================="
         
         # Get Function URL

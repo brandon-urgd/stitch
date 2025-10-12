@@ -193,6 +193,13 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-FunctionUrl'
   
+  CloudFrontDistributionId:
+    Description: 'CloudFront Distribution ID'
+    Condition: HasCertificate
+    Value: !Ref StitchCloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDistributionId'
+  
   CloudFrontUrl:
     Description: 'CloudFront Distribution URL'
     Condition: HasCertificate
