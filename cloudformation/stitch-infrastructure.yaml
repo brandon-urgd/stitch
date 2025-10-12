@@ -1,0 +1,204 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Stitch SVG to PES Converter - Complete Infrastructure'
+
+Parameters:
+  DomainName:
+    Type: String
+    Default: 'urgdstudios.com'
+    Description: 'Base domain name for the service'
+  
+  Subdomain:
+    Type: String
+    Default: 'stitch'
+    Description: 'Subdomain for the service (e.g., stitch.urgdstudios.com)'
+  
+  CertificateArn:
+    Type: String
+    Description: 'ARN of the SSL certificate for the domain (must be in us-east-1)'
+    Default: 'arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595'
+
+Conditions:
+  HasCertificate: !Not [!Equals [!Ref CertificateArn, '']]
+
+Resources:
+  # S3 Bucket for temporary file storage
+  StitchStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'urgd-stitch-storage-${AWS::AccountId}'
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteTempFiles
+            Status: Enabled
+            ExpirationInDays: 1
+            Filter:
+              Prefix: 'temp/'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # IAM Role for Lambda function
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'urgd-stitch-execution-role'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub '${StitchStorageBucket}/*'
+
+  # Lambda Layer for dependencies
+  StitchLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: 'urgd-stitch-libs'
+      Description: 'Dependencies for Stitch SVG to PES converter'
+      Content:
+        S3Bucket: !Ref StitchStorageBucket
+        S3Key: 'layers/stitch-libs.zip'
+      CompatibleRuntimes:
+        - python3.11
+
+  # Lambda Function
+  StitchFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: 'urgd-stitch'
+      Runtime: python3.11
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: !Ref StitchStorageBucket
+        S3Key: 'lambda/stitch-function.zip'
+      MemorySize: 512
+      Timeout: 30
+      Layers:
+        - !Ref StitchLayer
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref StitchStorageBucket
+
+  # Lambda Function URL
+  StitchFunctionUrl:
+    Type: AWS::Lambda::Url
+    Properties:
+      TargetFunctionArn: !Ref StitchFunction
+      AuthType: NONE
+      Cors:
+        AllowCredentials: false
+        AllowHeaders:
+          - '*'
+        AllowMethods:
+          - '*'
+        AllowOrigins:
+          - '*'
+        ExposeHeaders: []
+        MaxAge: 86400
+
+  # CloudFront Distribution
+  StitchCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Condition: HasCertificate
+    Properties:
+      DistributionConfig:
+        Comment: !Sub 'Stitch SVG to PES Converter - ${Subdomain}.${DomainName}'
+        Enabled: true
+        Aliases:
+          - !Sub '${Subdomain}.${DomainName}'
+        Origins:
+          - Id: StitchLambdaOrigin
+            DomainName: !GetAtt StitchFunctionUrl.DomainName
+            CustomOriginConfig:
+              HTTPPort: 443
+              HTTPSPort: 443
+              OriginProtocolPolicy: https-only
+        DefaultCacheBehavior:
+          TargetOriginId: StitchLambdaOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          CachedMethods:
+            - GET
+            - HEAD
+          ForwardedValues:
+            QueryString: true
+            Cookies:
+              Forward: none
+            Headers:
+              - Authorization
+          MinTTL: 0
+          DefaultTTL: 0
+          MaxTTL: 0
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
+
+  # Route 53 Record
+  StitchDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasCertificate
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub '${Subdomain}.${DomainName}'
+      Type: CNAME
+      TTL: 300
+      ResourceRecords:
+        - !GetAtt StitchCloudFrontDistribution.DomainName
+
+  # Hosted Zone ID Parameter (you'll need to provide this)
+  HostedZoneId:
+    Type: String
+    Default: 'Z0338626TGE7PTZDLIT1'
+    Description: 'Route 53 Hosted Zone ID for the domain'
+
+Outputs:
+  FunctionUrl:
+    Description: 'Direct Lambda Function URL'
+    Value: !GetAtt StitchFunctionUrl.FunctionUrl
+    Export:
+      Name: !Sub '${AWS::StackName}-FunctionUrl'
+  
+  CloudFrontUrl:
+    Description: 'CloudFront Distribution URL'
+    Condition: HasCertificate
+    Value: !Sub 'https://${StitchCloudFrontDistribution.DomainName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontUrl'
+  
+  CustomDomainUrl:
+    Description: 'Custom domain URL'
+    Condition: HasCertificate
+    Value: !Sub 'https://${Subdomain}.${DomainName}'
+    Export:
+      Name: !Sub '${AWS::StackName}-CustomDomainUrl'
+  
+  S3BucketName:
+    Description: 'S3 bucket for temporary file storage'
+    Value: !Ref StitchStorageBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-S3Bucket'
