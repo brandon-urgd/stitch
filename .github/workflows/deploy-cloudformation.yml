@@ -55,10 +55,28 @@ jobs:
         # Upload Lambda layer to urgd-applicationdata bucket
         aws s3 cp layer.zip s3://urgd-applicationdata/stitch/layers/stitch-libs.zip
         
+        # Upload website files to urgd-applicationdata bucket
+        aws s3 cp website/ s3://urgd-applicationdata/stitch/website/ --recursive
+        
     - name: Deploy CloudFormation Stack
       run: |
         chmod +x scripts/deploy-cloudformation.sh
         ./scripts/deploy-cloudformation.sh
+        
+    - name: Upload website to S3
+      run: |
+        # Get the website bucket name from CloudFormation outputs
+        WEBSITE_BUCKET=$(aws cloudformation describe-stacks \
+          --stack-name urgd-stitch-infrastructure \
+          --query 'Stacks[0].Outputs[?OutputKey==`WebsiteUrl`].OutputValue' \
+          --output text | sed 's|https://||' | sed 's|.s3-website.*||')
+        
+        echo "Uploading website to bucket: $WEBSITE_BUCKET"
+        
+        # Upload website files to the S3 website bucket
+        aws s3 cp website/ s3://$WEBSITE_BUCKET/ --recursive
+        
+        echo "Website uploaded successfully!"
         
     - name: Get CloudFront Distribution ID
       id: cloudfront

@@ -1,6 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Stitch SVG to PES Converter - Complete Infrastructure'
 
+# Global Tags
+Transform: AWS::Serverless-2016-10-31
+
+Metadata:
+  Tags:
+    - Key: brand
+      Value: urgd
+    - Key: project
+      Value: stitch
+
 Parameters:
   Environment:
     Type: String
@@ -53,6 +63,11 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
 
   # IAM Role for Lambda function
   LambdaExecutionRole:
@@ -79,6 +94,11 @@ Resources:
                   - s3:PutObject
                   - s3:DeleteObject
                 Resource: !Sub 'arn:aws:s3:::${StitchStorageBucket}/*'
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
 
   # Lambda Layer for dependencies
   StitchLayer:
@@ -110,24 +130,149 @@ Resources:
       Environment:
         Variables:
           BUCKET_NAME: !Ref StitchStorageBucket
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
 
-  # Lambda Function URL
-  StitchFunctionUrl:
-    Type: AWS::Lambda::Url
+  # S3 Bucket for static website hosting
+  StitchWebsiteBucket:
+    Type: AWS::S3::Bucket
     Properties:
-      TargetFunctionArn: !Ref StitchFunction
-      AuthType: NONE
-      Cors:
-        AllowCredentials: false
-        AllowHeaders:
-          - '*'
-        AllowMethods:
-          - '*'
-        AllowOrigins:
-          - '*'
-        ExposeHeaders:
-          - 'Content-Length'
-        MaxAge: 86400
+      BucketName: !Sub 'urgd-stitch-website-${Environment}-${AWS::AccountId}'
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+
+  # S3 Bucket Policy for public read access
+  StitchWebsiteBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StitchWebsiteBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub '${StitchWebsiteBucket}/*'
+
+  # API Gateway REST API for Lambda function
+  StitchApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'urgd-stitch-api-${Environment}'
+      Description: 'API Gateway for Stitch SVG to PES converter API'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      BinaryMediaTypes:
+        - '*/*'
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+
+  # API Gateway Lambda Permission
+  StitchApiGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref StitchFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${StitchApiGateway}/*/*'
+
+  # API Gateway Resource for /api path
+  StitchApiResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ParentId: !GetAtt StitchApiGateway.RootResourceId
+      PathPart: api
+
+  # API Gateway Method for POST requests (file conversion)
+  StitchApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ResourceId: !Ref StitchApiResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StitchFunction.Arn}/invocations'
+
+  # API Gateway Method for OPTIONS requests (CORS)
+  StitchApiGatewayOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ResourceId: !Ref StitchApiResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+  # API Gateway Deployment
+  StitchApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: 
+      - StitchApiGatewayMethod
+      - StitchApiGatewayOptionsMethod
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      StageName: !Ref Environment
+
+  # API Gateway Custom Domain
+  StitchApiDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Condition: HasCertificate
+    Properties:
+      DomainName: !Sub 'api.${Subdomain}.urgd.dev'
+      CertificateArn: !Ref CertificateArn
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+
+  # API Gateway Base Path Mapping
+  StitchApiBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Condition: HasCertificate
+    Properties:
+      DomainName: !Ref StitchApiDomainName
+      RestApiId: !Ref StitchApiGateway
+      Stage: !Ref StitchApiGatewayDeployment
 
   # CloudFront Distribution
   StitchCloudFrontDistribution:
@@ -140,39 +285,67 @@ Resources:
         Aliases:
           - !Sub '${Subdomain}.${DomainName}'
         Origins:
-          - Id: StitchLambdaOrigin
-            DomainName: !Select [2, !Split ['/', !GetAtt StitchFunctionUrl.FunctionUrl]]
+          - Id: StitchWebsiteOrigin
+            DomainName: !GetAtt StitchWebsiteBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
+          - Id: StitchApiOrigin
+            DomainName: !Sub 'api.${Subdomain}.urgd.dev'
             CustomOriginConfig:
               HTTPPort: 443
               HTTPSPort: 443
               OriginProtocolPolicy: https-only
         DefaultCacheBehavior:
-          TargetOriginId: StitchLambdaOrigin
+          TargetOriginId: StitchWebsiteOrigin
           ViewerProtocolPolicy: redirect-to-https
           AllowedMethods:
-            - DELETE
             - GET
             - HEAD
             - OPTIONS
-            - PATCH
-            - POST
-            - PUT
           CachedMethods:
             - GET
             - HEAD
           ForwardedValues:
-            QueryString: true
+            QueryString: false
             Cookies:
               Forward: none
-            Headers:
-              - Authorization
           MinTTL: 0
-          DefaultTTL: 0
-          MaxTTL: 0
+          DefaultTTL: 86400
+          MaxTTL: 31536000
+        CacheBehaviors:
+          - PathPattern: '/api/*'
+            TargetOriginId: StitchApiOrigin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods:
+              - GET
+              - HEAD
+              - OPTIONS
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+            CachedMethods:
+              - GET
+              - HEAD
+            ForwardedValues:
+              QueryString: true
+              Cookies:
+                Forward: none
+              Headers:
+                - Authorization
+                - Content-Type
+            MinTTL: 0
+            DefaultTTL: 0
+            MaxTTL: 0
         ViewerCertificate:
           AcmCertificateArn: !Ref CertificateArn
           SslSupportMethod: sni-only
           MinimumProtocolVersion: TLSv1.2_2021
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
 
   # Route 53 Record
   StitchDNSRecord:
@@ -186,12 +359,37 @@ Resources:
       ResourceRecords:
         - !GetAtt StitchCloudFrontDistribution.DomainName
 
+  # Route 53 Record for API domain
+  StitchApiDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: HasCertificate
+    Properties:
+      HostedZoneId: !Ref HostedZoneId
+      Name: !Sub 'api.${Subdomain}.urgd.dev'
+      Type: CNAME
+      TTL: 300
+      ResourceRecords:
+        - !GetAtt StitchApiDomainName.DistributionDomainName
+
 Outputs:
-  FunctionUrl:
-    Description: 'Direct Lambda Function URL'
-    Value: !GetAtt StitchFunctionUrl.FunctionUrl
+  WebsiteUrl:
+    Description: 'S3 Website URL'
+    Value: !GetAtt StitchWebsiteBucket.WebsiteURL
     Export:
-      Name: !Sub '${AWS::StackName}-FunctionUrl'
+      Name: !Sub '${AWS::StackName}-WebsiteUrl'
+  
+  ApiUrl:
+    Description: 'API Gateway URL'
+    Value: !Sub 'https://${StitchApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiUrl'
+  
+  ApiDomainUrl:
+    Description: 'API Custom Domain URL'
+    Condition: HasCertificate
+    Value: !Sub 'https://api.${Subdomain}.urgd.dev'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiDomainUrl'
   
   CloudFrontDistributionId:
     Description: 'CloudFront Distribution ID'
