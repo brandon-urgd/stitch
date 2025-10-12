@@ -373,7 +373,7 @@ Resources:
       Type: CNAME
       TTL: 300
       ResourceRecords:
-        - !GetAtt StitchApiDomainName.DistributionDomainName
+        - !GetAtt StitchApiDomainName.RegionalDomainName
 
 Outputs:
   WebsiteUrl:
