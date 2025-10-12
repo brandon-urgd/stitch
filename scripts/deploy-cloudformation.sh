@@ -5,7 +5,7 @@ set -e
 
 ENVIRONMENT=${1:-dev}
 STACK_NAME="urgd-stitch-${ENVIRONMENT}"
-TEMPLATE_URL="https://urgd-applicationdata.s3.amazonaws.com/stitch/cloudformation/stitch-infrastructure.yaml"
+TEMPLATE_FILE="cloudformation/stitch-infrastructure.yaml"
 REGION="${AWS_REGION:-us-west-2}"
 
 # Get current git commit hash
@@ -19,7 +19,7 @@ if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGI
     echo "📝 Updating existing CloudFormation stack..."
     if aws cloudformation update-stack \
         --stack-name "$STACK_NAME" \
-        --template-url "$TEMPLATE_URL" \
+        --template-body file://"$TEMPLATE_FILE" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
         --parameters ParameterKey=Environment,ParameterValue="$ENVIRONMENT" ParameterKey=GitCommit,ParameterValue="$GIT_COMMIT" 2>&1 | tee /tmp/update-output.log; then
@@ -42,7 +42,7 @@ else
     echo "🆕 Creating new CloudFormation stack..."
     aws cloudformation create-stack \
         --stack-name "$STACK_NAME" \
-        --template-url "$TEMPLATE_URL" \
+        --template-body file://"$TEMPLATE_FILE" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
         --parameters ParameterKey=Environment,ParameterValue="$ENVIRONMENT" ParameterKey=GitCommit,ParameterValue="$GIT_COMMIT"
