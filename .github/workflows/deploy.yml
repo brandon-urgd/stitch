@@ -27,7 +27,7 @@ jobs:
       with:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+        aws-region: ${{ secrets.AWS_REGION || 'us-west-2' }}
         
     - name: Install dependencies
       run: |
@@ -50,7 +50,7 @@ jobs:
     - name: Create S3 bucket if not exists
       run: |
         aws s3api head-bucket --bucket urgd-stitch-storage 2>/dev/null || \
-        aws s3 mb s3://urgd-stitch-storage --region ${{ secrets.AWS_REGION || 'us-east-1' }}
+        aws s3 mb s3://urgd-stitch-storage --region ${{ secrets.AWS_REGION || 'us-west-2' }}
         
     - name: Configure S3 bucket lifecycle
       run: |
@@ -70,18 +70,33 @@ jobs:
           ]
         }
         EOF
-        aws s3api put-bucket-lifecycle-configuration \
-          --bucket urgd-stitch-storage \
-          --lifecycle-configuration file://lifecycle.json
+        # Only set lifecycle if bucket exists and doesn't already have this config
+        if aws s3api head-bucket --bucket urgd-stitch-storage 2>/dev/null; then
+          aws s3api put-bucket-lifecycle-configuration \
+            --bucket urgd-stitch-storage \
+            --lifecycle-configuration file://lifecycle.json
+        fi
           
     - name: Create or update Lambda layer
       run: |
-        LAYER_VERSION=$(aws lambda publish-layer-version \
-          --layer-name urgd-stitch-libs \
-          --zip-file fileb://layer.zip \
-          --compatible-runtimes python3.11 \
-          --query 'Version' --output text)
-        echo "LAYER_VERSION=$LAYER_VERSION" >> $GITHUB_ENV
+        # Check if layer exists first
+        if aws lambda get-layer-version --layer-name urgd-stitch-libs --version-number 1 >/dev/null 2>&1; then
+          echo "Layer already exists, using version 1"
+          echo "LAYER_VERSION=1" >> $GITHUB_ENV
+        else
+          # Try to create layer, fall back to no layer if permission denied
+          if LAYER_VERSION=$(aws lambda publish-layer-version \
+            --layer-name urgd-stitch-libs \
+            --zip-file fileb://layer.zip \
+            --compatible-runtimes python3.11 \
+            --query 'Version' --output text 2>/dev/null); then
+            echo "LAYER_VERSION=$LAYER_VERSION" >> $GITHUB_ENV
+            echo "Layer created successfully"
+          else
+            echo "Warning: Could not create Lambda layer (permission denied). Continuing without layer."
+            echo "LAYER_VERSION=" >> $GITHUB_ENV
+          fi
+        fi
         
     - name: Create or update Lambda function
       run: |
@@ -92,22 +107,41 @@ jobs:
             --function-name urgd-stitch \
             --zip-file fileb://lambda_function.zip
           
-          aws lambda update-function-configuration \
-            --function-name urgd-stitch \
-            --layers arn:aws:lambda:${{ secrets.AWS_REGION || 'us-east-1' }}:123456789012:layer:urgd-stitch-libs:$LAYER_VERSION \
-            --memory-size 512 \
-            --timeout 30
+          # Only add layer if it was created successfully
+          if [ -n "$LAYER_VERSION" ]; then
+            aws lambda update-function-configuration \
+              --function-name urgd-stitch \
+              --layers arn:aws:lambda:${{ secrets.AWS_REGION || 'us-west-2' }}:${{ secrets.AWS_ACCOUNT_ID }}:layer:urgd-stitch-libs:$LAYER_VERSION \
+              --memory-size 512 \
+              --timeout 30
+          else
+            aws lambda update-function-configuration \
+              --function-name urgd-stitch \
+              --memory-size 512 \
+              --timeout 30
+          fi
         else
           # Create new function
-          aws lambda create-function \
-            --function-name urgd-stitch \
-            --runtime python3.11 \
-            --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/lambda-execution-role \
-            --handler lambda_function.lambda_handler \
-            --zip-file fileb://lambda_function.zip \
-            --layers arn:aws:lambda:${{ secrets.AWS_REGION || 'us-east-1' }}:123456789012:layer:urgd-stitch-libs:$LAYER_VERSION \
-            --memory-size 512 \
-            --timeout 30
+          if [ -n "$LAYER_VERSION" ]; then
+            aws lambda create-function \
+              --function-name urgd-stitch \
+              --runtime python3.11 \
+              --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/lambda-execution-role \
+              --handler lambda_function.lambda_handler \
+              --zip-file fileb://lambda_function.zip \
+              --layers arn:aws:lambda:${{ secrets.AWS_REGION || 'us-west-2' }}:${{ secrets.AWS_ACCOUNT_ID }}:layer:urgd-stitch-libs:$LAYER_VERSION \
+              --memory-size 512 \
+              --timeout 30
+          else
+            aws lambda create-function \
+              --function-name urgd-stitch \
+              --runtime python3.11 \
+              --role arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/lambda-execution-role \
+              --handler lambda_function.lambda_handler \
+              --zip-file fileb://lambda_function.zip \
+              --memory-size 512 \
+              --timeout 30
+          fi
         fi
         
     - name: Create Lambda execution role
@@ -129,15 +163,16 @@ jobs:
         EOF
         
         # Create role if it doesn't exist
-        aws iam get-role --role-name lambda-execution-role >/dev/null 2>&1 || \
-        aws iam create-role \
-          --role-name lambda-execution-role \
-          --assume-role-policy-document file://trust-policy.json
+        if ! aws iam get-role --role-name lambda-execution-role >/dev/null 2>&1; then
+          aws iam create-role \
+            --role-name lambda-execution-role \
+            --assume-role-policy-document file://trust-policy.json
+        fi
           
-        # Attach policies
+        # Attach policies (idempotent - won't fail if already attached)
         aws iam attach-role-policy \
           --role-name lambda-execution-role \
-          --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+          --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole || true
           
         # Create S3 policy
         cat > s3-policy.json << EOF
@@ -157,6 +192,7 @@ jobs:
         }
         EOF
         
+        # Update role policy (will overwrite if exists)
         aws iam put-role-policy \
           --role-name lambda-execution-role \
           --policy-name S3Access \

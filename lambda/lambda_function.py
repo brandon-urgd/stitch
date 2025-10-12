@@ -12,8 +12,10 @@ import traceback
 try:
     import pyembroidery
     PYEMBROIDERY_AVAILABLE = True
+    print("pyembroidery library loaded successfully")
 except ImportError:
     PYEMBROIDERY_AVAILABLE = False
+    print("Warning: pyembroidery library not available, using fallback conversion")
 
 s3_client = boto3.client('s3')
 BUCKET_NAME = 'urgd-stitch-storage'
