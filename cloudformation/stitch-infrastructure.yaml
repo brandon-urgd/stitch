@@ -16,6 +16,11 @@ Parameters:
     Type: String
     Description: 'ARN of the SSL certificate for the domain (must be in us-east-1)'
     Default: 'arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595'
+  
+  HostedZoneId:
+    Type: String
+    Default: 'Z0338626TGE7PTZDLIT1'
+    Description: 'Route 53 Hosted Zone ID for the domain'
 
 Conditions:
   HasCertificate: !Not [!Equals [!Ref CertificateArn, '']]
@@ -25,14 +30,13 @@ Resources:
   StitchStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'urgd-stitch-storage-${AWS::AccountId}'
+      BucketName: 'urgd-stitch-storage'
       LifecycleConfiguration:
         Rules:
           - Id: DeleteTempFiles
             Status: Enabled
             ExpirationInDays: 1
-            Filter:
-              Prefix: 'temp/'
+            Prefix: 'temp/'
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
@@ -43,7 +47,7 @@ Resources:
   LambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub 'urgd-stitch-execution-role'
+      RoleName: 'urgd-lambda-execution-role'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -110,7 +114,8 @@ Resources:
           - '*'
         AllowOrigins:
           - '*'
-        ExposeHeaders: []
+        ExposeHeaders:
+          - 'Content-Length'
         MaxAge: 86400
 
   # CloudFront Distribution
@@ -125,7 +130,7 @@ Resources:
           - !Sub '${Subdomain}.${DomainName}'
         Origins:
           - Id: StitchLambdaOrigin
-            DomainName: !GetAtt StitchFunctionUrl.DomainName
+            DomainName: !Select [2, !Split ['/', !GetAtt StitchFunctionUrl.FunctionUrl]]
             CustomOriginConfig:
               HTTPPort: 443
               HTTPSPort: 443
@@ -169,12 +174,6 @@ Resources:
       TTL: 300
       ResourceRecords:
         - !GetAtt StitchCloudFrontDistribution.DomainName
-
-  # Hosted Zone ID Parameter (you'll need to provide this)
-  HostedZoneId:
-    Type: String
-    Default: 'Z0338626TGE7PTZDLIT1'
-    Description: 'Route 53 Hosted Zone ID for the domain'
 
 Outputs:
   FunctionUrl:

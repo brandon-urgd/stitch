@@ -1,8 +1,9 @@
-name: Deploy Stitch Lambda
+name: Deploy Stitch Lambda (DEPRECATED - Use CloudFormation)
 
 on:
-  push:
-    branches: [ main ]
+  # Disabled - use deploy-cloudformation.yml instead
+  # push:
+  #   branches: [ main ]
   workflow_dispatch:
 
 permissions:
