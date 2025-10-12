@@ -1,8 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Stitch SVG to PES Converter - Complete Infrastructure'
+Description: 'Stitch SVG to PES Converter - Simple Infrastructure with Function URL'
 
 # Global Tags
-
 Metadata:
   Tags:
     - Key: brand
@@ -16,39 +15,6 @@ Parameters:
     Default: 'prod'
     Description: 'Environment name (prod, dev, staging)'
     AllowedValues: ['prod', 'dev', 'staging']
-  
-  DomainName:
-    Type: String
-    Default: 'urgdstudios.com'
-    Description: 'Base domain name for the service'
-  
-  Subdomain:
-    Type: String
-    Default: 'stitch'
-    Description: 'Subdomain for the service (e.g., stitch.urgdstudios.com)'
-  
-  CertificateArn:
-    Type: String
-    Description: 'ARN of the SSL certificate for the domain (must be in us-east-1 for CloudFront)'
-    Default: 'arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595'
-  
-  ApiCertificateArn:
-    Type: String
-    Description: 'ARN of the SSL certificate for API Gateway (us-west-2)'
-    Default: 'arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935'
-  
-  HostedZoneId:
-    Type: String
-    Default: 'Z0338626TGE7PTZDLIT1'
-    Description: 'Route 53 Hosted Zone ID for the domain'
-  
-  ArtifactsBucketName:
-    Type: String
-    Description: 'Name of the existing S3 bucket for Lambda code and layers'
-    Default: 'urgd-applicationdata'
-
-Conditions:
-  HasCertificate: !Not [!Equals [!Ref CertificateArn, '']]
 
 Resources:
   # S3 Bucket for user temporary file storage
@@ -104,42 +70,6 @@ Resources:
         - Key: project
           Value: stitch
 
-  # Lambda Layer for dependencies
-  StitchLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      LayerName: !Sub 'urgd-stitch-libs-${Environment}'
-      Description: 'Dependencies for Stitch SVG to PES converter'
-      Content:
-        S3Bucket: !Ref ArtifactsBucketName
-        S3Key: 'stitch/layers/stitch-libs.zip'
-      CompatibleRuntimes:
-        - python3.11
-
-  # Lambda Function
-  StitchFunction:
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub 'urgd-stitch-${Environment}'
-      Runtime: python3.11
-      Handler: lambda_function.lambda_handler
-      Role: !GetAtt LambdaExecutionRole.Arn
-      Code:
-        S3Bucket: !Ref ArtifactsBucketName
-        S3Key: 'stitch/lambda/stitch-function.zip'
-      MemorySize: 512
-      Timeout: 30
-      Layers:
-        - !Ref StitchLayer
-      Environment:
-        Variables:
-          BUCKET_NAME: !Ref StitchStorageBucket
-      Tags:
-        - Key: brand
-          Value: urgd
-        - Key: project
-          Value: stitch
-
   # S3 Bucket for static website hosting
   StitchWebsiteBucket:
     Type: AWS::S3::Bucket
@@ -171,7 +101,33 @@ Resources:
             Action: s3:GetObject
             Resource: !Sub '${StitchWebsiteBucket}/*'
 
-  # API Gateway REST API for Lambda function
+  # Lambda Function
+  StitchFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'urgd-stitch-${Environment}'
+      Runtime: python3.11
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          def lambda_handler(event, context):
+              return {
+                  'statusCode': 200,
+                  'body': 'Hello from Stitch Lambda!'
+              }
+      MemorySize: 512
+      Timeout: 30
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref StitchStorageBucket
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+
+  # API Gateway REST API
   StitchApiGateway:
     Type: AWS::ApiGateway::RestApi
     Properties:
@@ -205,7 +161,7 @@ Resources:
       ParentId: !GetAtt StitchApiGateway.RootResourceId
       PathPart: api
 
-  # API Gateway Method for POST requests (file conversion)
+  # API Gateway Method for POST requests
   StitchApiGatewayMethod:
     Type: AWS::ApiGateway::Method
     Properties:
@@ -253,37 +209,12 @@ Resources:
       RestApiId: !Ref StitchApiGateway
       StageName: !Ref Environment
 
-  # API Gateway Custom Domain
-  StitchApiDomainName:
-    Type: AWS::ApiGateway::DomainName
-    Condition: HasCertificate
-    Properties:
-      DomainName: !Sub 'api.${Subdomain}.urgd.dev'
-      CertificateArn: !Ref ApiCertificateArn
-      EndpointConfiguration:
-        Types:
-          - REGIONAL
-      Tags:
-        - Key: brand
-          Value: urgd
-        - Key: project
-          Value: stitch
-
-  # API Gateway Base Path Mapping
-  StitchApiBasePathMapping:
-    Type: AWS::ApiGateway::BasePathMapping
-    Condition: HasCertificate
-    Properties:
-      DomainName: !Ref StitchApiDomainName
-      RestApiId: !Ref StitchApiGateway
-      Stage: !Ref StitchApiGatewayDeployment
-
-  # CloudFront Distribution (simplified - no custom domain)
+  # CloudFront Distribution
   StitchCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
-        Comment: !Sub 'Stitch SVG to PES Converter - ${Subdomain}.${DomainName}'
+        Comment: !Sub 'Stitch SVG to PES Converter - ${Environment}'
         Enabled: true
         Origins:
           - Id: StitchWebsiteOrigin
@@ -344,30 +275,6 @@ Resources:
         - Key: project
           Value: stitch
 
-  # Route 53 Record (commented out - using CloudFront default domain)
-  # StitchDNSRecord:
-  #   Type: AWS::Route53::RecordSet
-  #   Condition: HasCertificate
-  #   Properties:
-  #     HostedZoneId: !Ref HostedZoneId
-  #     Name: !Sub '${Subdomain}.${DomainName}'
-  #     Type: CNAME
-  #     TTL: 300
-  #     ResourceRecords:
-  #       - !GetAtt StitchCloudFrontDistribution.DomainName
-
-  # Route 53 Record for API domain (commented out - using standard API Gateway URL)
-  # StitchApiDNSRecord:
-  #   Type: AWS::Route53::RecordSet
-  #   Condition: HasCertificate
-  #   Properties:
-  #     HostedZoneId: !Ref HostedZoneId
-  #     Name: !Sub 'api.${Subdomain}.urgd.dev'
-  #     Type: CNAME
-  #     TTL: 300
-  #     ResourceRecords:
-  #       - !GetAtt StitchApiDomainName.RegionalDomainName
-
 Outputs:
   WebsiteUrl:
     Description: 'S3 Website URL'
@@ -380,13 +287,6 @@ Outputs:
     Value: !Sub 'https://${StitchApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
     Export:
       Name: !Sub '${AWS::StackName}-ApiUrl'
-  
-  ApiDomainUrl:
-    Description: 'API Custom Domain URL'
-    Condition: HasCertificate
-    Value: !Sub 'https://api.${Subdomain}.urgd.dev'
-    Export:
-      Name: !Sub '${AWS::StackName}-ApiDomainUrl'
   
   CloudFrontDistributionId:
     Description: 'CloudFront Distribution ID'

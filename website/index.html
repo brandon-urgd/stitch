@@ -183,9 +183,8 @@
                 }, 200);
                 
                     // Use the API Gateway endpoint for conversion
-                    // The API endpoint will be injected by the Lambda function
-                    const apiEndpoint = window.API_ENDPOINT || '/api';
-                    const response = await fetch(apiEndpoint, { method: 'POST', body: formData });
+                    // CloudFront will route /api/* requests to API Gateway
+                    const response = await fetch('/api', { method: 'POST', body: formData });
                 clearInterval(progressInterval);
                 progressFill.style.width = '100%';
                 progressText.textContent = 'Complete!';
