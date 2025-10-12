@@ -1,0 +1,3 @@
+boto3==1.34.0
+pyembroidery==1.1.0
+Pillow==10.1.0
