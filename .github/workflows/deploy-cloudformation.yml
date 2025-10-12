@@ -40,11 +40,11 @@ jobs:
         
     - name: Upload website to S3
       run: |
-        # Get the website bucket name from CloudFormation outputs
+        # Get the website bucket name directly from the stack
         WEBSITE_BUCKET=$(aws cloudformation describe-stacks \
           --stack-name urgd-stitch-infrastructure \
-          --query 'Stacks[0].Outputs[?OutputKey==`WebsiteUrl`].OutputValue' \
-          --output text | sed 's|https://||' | sed 's|.s3-website.*||')
+          --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucketName`].OutputValue' \
+          --output text)
         
         echo "Uploading website to bucket: $WEBSITE_BUCKET"
         

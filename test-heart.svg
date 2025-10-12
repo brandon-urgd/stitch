@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Simple heart shape for testing -->
+  <path d="M100,180 C100,180 20,120 20,80 C20,50 50,20 100,20 C150,20 180,50 180,80 C180,120 100,180 100,180 Z" 
+        fill="#ff6b6b" 
+        stroke="#d63031" 
+        stroke-width="2"/>
+  
+  <!-- Add some text -->
+  <text x="100" y="100" 
+        text-anchor="middle" 
+        font-family="Arial, sans-serif" 
+        font-size="16" 
+        fill="white" 
+        font-weight="bold">TEST</text>
+</svg>

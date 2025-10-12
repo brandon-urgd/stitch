@@ -318,3 +318,9 @@ Outputs:
     Value: !Ref StitchStorageBucket
     Export:
       Name: !Sub '${AWS::StackName}-S3Bucket'
+  
+  WebsiteBucketName:
+    Description: 'S3 bucket for website hosting'
+    Value: !Ref StitchWebsiteBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-WebsiteBucketName'
