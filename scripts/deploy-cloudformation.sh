@@ -17,17 +17,27 @@ echo "🚀 Deploying Stitch infrastructure with CloudFormation..."
 # Check if stack exists
 if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" >/dev/null 2>&1; then
     echo "📝 Updating existing CloudFormation stack..."
-    aws cloudformation update-stack \
+    if aws cloudformation update-stack \
         --stack-name "$STACK_NAME" \
         --template-url "$TEMPLATE_URL" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
-        --parameters ParameterKey=Environment,ParameterValue="$ENVIRONMENT" ParameterKey=GitCommit,ParameterValue="$GIT_COMMIT"
-    
-    echo "⏳ Waiting for stack update to complete..."
-    aws cloudformation wait stack-update-complete \
-        --stack-name "$STACK_NAME" \
-        --region "$REGION"
+        --parameters ParameterKey=Environment,ParameterValue="$ENVIRONMENT" ParameterKey=GitCommit,ParameterValue="$GIT_COMMIT" 2>&1 | tee /tmp/update-output.log; then
+        echo "✅ Stack update initiated"
+        echo "⏳ Waiting for stack update to complete..."
+        aws cloudformation wait stack-update-complete \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION"
+    else
+        # Check if the error is "No updates are to be performed"
+        if grep -q "No updates are to be performed" /tmp/update-output.log; then
+            echo "✅ Stack is already up to date - no changes needed"
+        else
+            echo "❌ Stack update failed"
+            cat /tmp/update-output.log
+            exit 1
+        fi
+    fi
 else
     echo "🆕 Creating new CloudFormation stack..."
     aws cloudformation create-stack \

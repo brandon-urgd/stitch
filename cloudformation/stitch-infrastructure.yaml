@@ -34,7 +34,7 @@ Parameters:
 
   # Conditions
   IsProdEnvironment:
-    Fn::Equals:
+    !Equals
       - !Ref Environment
       - 'prod'
 
