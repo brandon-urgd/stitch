@@ -49,16 +49,11 @@ jobs:
         
     - name: Upload artifacts to S3
       run: |
-        # Create S3 bucket if it doesn't exist
-        BUCKET_NAME="urgd-stitch-storage-prod-${{ secrets.AWS_ACCOUNT_ID }}"
-        aws s3api head-bucket --bucket $BUCKET_NAME 2>/dev/null || \
-        aws s3 mb s3://$BUCKET_NAME --region ${{ secrets.AWS_REGION || 'us-west-2' }}
+        # Upload Lambda function code to urgd-applicationdata bucket
+        aws s3 cp lambda_function.zip s3://urgd-applicationdata/stitch/lambda/stitch-function.zip
         
-        # Upload Lambda function code
-        aws s3 cp lambda_function.zip s3://$BUCKET_NAME/lambda/stitch-function.zip
-        
-        # Upload Lambda layer
-        aws s3 cp layer.zip s3://$BUCKET_NAME/layers/stitch-libs.zip
+        # Upload Lambda layer to urgd-applicationdata bucket
+        aws s3 cp layer.zip s3://urgd-applicationdata/stitch/layers/stitch-libs.zip
         
     - name: Deploy CloudFormation Stack
       run: |

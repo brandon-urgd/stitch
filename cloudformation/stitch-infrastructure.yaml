@@ -28,24 +28,20 @@ Parameters:
     Default: 'Z0338626TGE7PTZDLIT1'
     Description: 'Route 53 Hosted Zone ID for the domain'
   
-  S3BucketName:
+  ArtifactsBucketName:
     Type: String
     Description: 'Name of the existing S3 bucket for Lambda code and layers'
-    Default: ''
+    Default: 'urgd-applicationdata'
 
 Conditions:
   HasCertificate: !Not [!Equals [!Ref CertificateArn, '']]
-  HasS3Bucket: !Not [!Equals [!Ref S3BucketName, '']]
 
 Resources:
-  # Reference existing S3 bucket (created by GitHub workflow)
+  # S3 Bucket for user temporary file storage
   StitchStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !If
-        - HasS3Bucket
-        - !Ref S3BucketName
-        - !Sub 'urgd-stitch-storage-${Environment}-${AWS::AccountId}'
+      BucketName: !Sub 'urgd-stitch-storage-${Environment}-${AWS::AccountId}'
       LifecycleConfiguration:
         Rules:
           - Id: DeleteTempFiles
@@ -91,8 +87,8 @@ Resources:
       LayerName: !Sub 'urgd-stitch-libs-${Environment}'
       Description: 'Dependencies for Stitch SVG to PES converter'
       Content:
-        S3Bucket: !Ref StitchStorageBucket
-        S3Key: 'layers/stitch-libs.zip'
+        S3Bucket: !Ref ArtifactsBucketName
+        S3Key: 'stitch/layers/stitch-libs.zip'
       CompatibleRuntimes:
         - python3.11
 
@@ -105,8 +101,8 @@ Resources:
       Handler: lambda_function.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        S3Bucket: !Ref StitchStorageBucket
-        S3Key: 'lambda/stitch-function.zip'
+        S3Bucket: !Ref ArtifactsBucketName
+        S3Key: 'stitch/lambda/stitch-function.zip'
       MemorySize: 512
       Timeout: 30
       Layers:
