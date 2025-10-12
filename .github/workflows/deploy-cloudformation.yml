@@ -29,34 +29,9 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION || 'us-west-2' }}
         
-    - name: Install dependencies
+    - name: Prepare website files
       run: |
-        cd lambda
-        pip install -r requirements.txt
-        
-    - name: Create Lambda layer
-      run: |
-        mkdir -p layer/python
-        cd lambda
-        pip install -r requirements.txt -t ../layer/python/
-        cd ../layer
-        zip -r ../layer.zip .
-        
-    - name: Create Lambda deployment package
-      run: |
-        cd lambda
-        zip -r ../lambda_function.zip .
-        
-    - name: Upload artifacts to S3
-      run: |
-        # Upload Lambda function code to urgd-applicationdata bucket
-        aws s3 cp lambda_function.zip s3://urgd-applicationdata/stitch/lambda/stitch-function.zip
-        
-        # Upload Lambda layer to urgd-applicationdata bucket
-        aws s3 cp layer.zip s3://urgd-applicationdata/stitch/layers/stitch-libs.zip
-        
-        # Upload website files to urgd-applicationdata bucket
-        aws s3 cp website/ s3://urgd-applicationdata/stitch/website/ --recursive
+        echo "📁 Website files ready for upload to S3 bucket"
         
     - name: Deploy CloudFormation Stack
       run: |
@@ -180,13 +155,13 @@ jobs:
         echo ""
         echo "===================="
         
-        # Get Function URL
-        FUNCTION_URL=$(aws cloudformation describe-stacks \
+        # Get API Gateway URL
+        API_URL=$(aws cloudformation describe-stacks \
           --stack-name "$STACK_NAME" \
           --region "$REGION" \
-          --query 'Stacks[0].Outputs[?OutputKey==`FunctionUrl`].OutputValue' \
+          --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
           --output text)
-        echo "🔗 Function URL: $FUNCTION_URL"
+        echo "🔗 API Gateway URL: $API_URL"
         
         # Get CloudFront URL
         CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
@@ -197,18 +172,7 @@ jobs:
         
         if [ "$CLOUDFRONT_URL" != "None" ] && [ -n "$CLOUDFRONT_URL" ]; then
           echo "☁️  CloudFront URL: $CLOUDFRONT_URL"
-        fi
-        
-        # Get Custom Domain URL
-        CUSTOM_DOMAIN=$(aws cloudformation describe-stacks \
-          --stack-name "$STACK_NAME" \
-          --region "$REGION" \
-          --query 'Stacks[0].Outputs[?OutputKey==`CustomDomainUrl`].OutputValue' \
-          --output text)
-        
-        if [ "$CUSTOM_DOMAIN" != "None" ] && [ -n "$CUSTOM_DOMAIN" ]; then
-          echo "🌐 Custom Domain: $CUSTOM_DOMAIN"
-          echo "::notice::Stitch is deployed! Access it at: $CUSTOM_DOMAIN"
+          echo "::notice::Stitch is deployed! Access it at: $CLOUDFRONT_URL"
         else
-          echo "::notice::Stitch is deployed! Access it at: $FUNCTION_URL"
+          echo "::notice::Stitch is deployed! Access it at: $API_URL"
         fi

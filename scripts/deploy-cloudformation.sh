@@ -17,10 +17,7 @@ if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGI
         --template-body "file://$TEMPLATE_FILE" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
-        --parameters ParameterKey=Environment,ParameterValue="prod" \
-                   ParameterKey=DomainName,ParameterValue="urgdstudios.com" \
-                   ParameterKey=Subdomain,ParameterValue="stitch" \
-                   ParameterKey=CertificateArn,ParameterValue="arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595"
+        --parameters ParameterKey=Environment,ParameterValue="prod"
     
     echo "⏳ Waiting for stack update to complete..."
     aws cloudformation wait stack-update-complete \
@@ -33,10 +30,7 @@ else
         --template-body "file://$TEMPLATE_FILE" \
         --capabilities CAPABILITY_NAMED_IAM \
         --region "$REGION" \
-        --parameters ParameterKey=Environment,ParameterValue="prod" \
-                   ParameterKey=DomainName,ParameterValue="urgdstudios.com" \
-                   ParameterKey=Subdomain,ParameterValue="stitch" \
-                   ParameterKey=CertificateArn,ParameterValue="arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595"
+        --parameters ParameterKey=Environment,ParameterValue="prod"
     
     echo "⏳ Waiting for stack creation to complete..."
     aws cloudformation wait stack-create-complete \
@@ -54,21 +48,16 @@ aws cloudformation describe-stacks \
     --query 'Stacks[0].Outputs' \
     --output table
 
-# Get the custom domain URL
-CUSTOM_DOMAIN=$(aws cloudformation describe-stacks \
+# Get the CloudFront URL
+CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
     --stack-name "$STACK_NAME" \
     --region "$REGION" \
-    --query 'Stacks[0].Outputs[?OutputKey==`CustomDomainUrl`].OutputValue' \
+    --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontUrl`].OutputValue' \
     --output text)
 
-if [ "$CUSTOM_DOMAIN" != "None" ] && [ -n "$CUSTOM_DOMAIN" ]; then
-    echo "🌐 Custom domain: $CUSTOM_DOMAIN"
-    echo "⏳ Note: DNS propagation may take a few minutes..."
+if [ "$CLOUDFRONT_URL" != "None" ] && [ -n "$CLOUDFRONT_URL" ]; then
+    echo "☁️  CloudFront URL: $CLOUDFRONT_URL"
+    echo "⏳ Note: CloudFront distribution may take a few minutes to propagate..."
 else
-    FUNCTION_URL=$(aws cloudformation describe-stacks \
-        --stack-name "$STACK_NAME" \
-        --region "$REGION" \
-        --query 'Stacks[0].Outputs[?OutputKey==`FunctionUrl`].OutputValue' \
-        --output text)
-    echo "🔗 Function URL: $FUNCTION_URL"
+    echo "❌ CloudFront URL not found in stack outputs"
 fi
