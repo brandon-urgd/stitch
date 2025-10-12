@@ -69,11 +69,12 @@ jobs:
           --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucketName`].OutputValue' \
           --output text)
         
-        # Get the API Gateway URL from the stack
-        API_URL=$(aws cloudformation describe-stacks \
+        # Get the API Gateway URL from the stack and append /api path
+        API_BASE_URL=$(aws cloudformation describe-stacks \
           --stack-name urgd-stitch-infrastructure \
           --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
           --output text)
+        API_URL="${API_BASE_URL}/api"
         
         echo "Uploading website to bucket: $WEBSITE_BUCKET"
         echo "API Gateway URL: $API_URL"
