@@ -174,7 +174,7 @@ Resources:
       Description: 'API Gateway for Stitch SVG to PES converter API'
       EndpointConfiguration:
         Types:
-          - REGIONAL
+          - EDGE
       BinaryMediaTypes:
         - '*/*'
       Tags:
@@ -257,7 +257,7 @@ Resources:
       CertificateArn: !Ref CertificateArn
       EndpointConfiguration:
         Types:
-          - REGIONAL
+          - EDGE
       Tags:
         - Key: brand
           Value: urgd
