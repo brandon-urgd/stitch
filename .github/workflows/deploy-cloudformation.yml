@@ -153,7 +153,7 @@ jobs:
         # Update the API URL in the website based on environment
         ENVIRONMENT="${{ env.ENVIRONMENT }}"
         if [ "$ENVIRONMENT" = "prod" ]; then
-          API_URL="https://api-prod.stitch.urgd.dev/prod/api"
+          API_URL="https://api.stitch.urgd.dev/prod/api"
           WEBSITE_URL="https://stitch.urgdstudios.com"
         else
           API_URL="https://api-${ENVIRONMENT}.stitch.urgd.dev/${ENVIRONMENT}/api"

@@ -32,6 +32,12 @@ Parameters:
     Default: 'arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47'
     Description: 'ACM certificate ARN for stitch.urgdstudios.com (must be in us-east-1 for CloudFront)'
 
+  # Conditions
+  IsProdEnvironment:
+    Fn::Equals:
+      - !Ref Environment
+      - 'prod'
+
   # Route 53 Hosted Zone IDs
   UrgdDevHostedZoneId:
     Type: String
@@ -248,7 +254,10 @@ Resources:
   StitchApiGatewayDomainName:
     Type: AWS::ApiGateway::DomainName
     Properties:
-      DomainName: !Sub 'api-${Environment}.stitch.urgd.dev'
+      DomainName: !If
+        - IsProdEnvironment
+        - 'api.stitch.urgd.dev'
+        - !Sub 'api-${Environment}.stitch.urgd.dev'
       RegionalCertificateArn: !Ref AcmCertArnApiRegion
       EndpointConfiguration:
         Types:
@@ -274,7 +283,10 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneId: !Ref UrgdDevHostedZoneId
-      Name: !Sub 'api-${Environment}.stitch.urgd.dev'
+      Name: !If
+        - IsProdEnvironment
+        - 'api.stitch.urgd.dev'
+        - !Sub 'api-${Environment}.stitch.urgd.dev'
       Type: A
       AliasTarget:
         DNSName: !GetAtt StitchApiGatewayDomainName.RegionalDomainName
@@ -289,7 +301,10 @@ Resources:
         Enabled: true
         DefaultRootObject: index.html
         Aliases:
-          - !Sub '${Environment}.stitch.urgdstudios.com'
+          - !If
+            - IsProdEnvironment
+            - 'stitch.urgdstudios.com'
+            - !Sub '${Environment}.stitch.urgdstudios.com'
         ViewerCertificate:
           AcmCertificateArn: !Ref AcmCertArnCloudFront
           SslSupportMethod: sni-only
@@ -359,7 +374,10 @@ Resources:
     Type: AWS::Route53::RecordSet
     Properties:
       HostedZoneId: !Ref UrgdStudiosHostedZoneId
-      Name: !Sub '${Environment}.stitch.urgdstudios.com'
+      Name: !If
+        - IsProdEnvironment
+        - 'stitch.urgdstudios.com'
+        - !Sub '${Environment}.stitch.urgdstudios.com'
       Type: A
       AliasTarget:
         DNSName: !GetAtt StitchCloudFrontDistribution.DomainName
@@ -404,12 +422,18 @@ Outputs:
 
   CustomApiUrl:
     Description: 'Custom API Gateway URL'
-    Value: !Sub 'https://api-${Environment}.stitch.urgd.dev'
+    Value: !If
+      - IsProdEnvironment
+      - 'https://api.stitch.urgd.dev'
+      - !Sub 'https://api-${Environment}.stitch.urgd.dev'
     Export:
       Name: !Sub '${AWS::StackName}-CustomApiUrl'
 
   CustomWebsiteUrl:
     Description: 'Custom CloudFront URL'
-    Value: !Sub 'https://${Environment}.stitch.urgdstudios.com'
+    Value: !If
+      - IsProdEnvironment
+      - 'https://stitch.urgdstudios.com'
+      - !Sub 'https://${Environment}.stitch.urgdstudios.com'
     Export:
       Name: !Sub '${AWS::StackName}-CustomWebsiteUrl'
