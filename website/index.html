@@ -11,8 +11,8 @@
     <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="Stitch - SVG to PES Converter">
     <meta property="og:description" content="Convert SVG files to PES embroidery format instantly. Professional SVG to PES converter powered by ur/gd studios.">
-    <meta property="og:image" content="https://stitch.urgdstudios.com/assets/urgd-logo-og.png">
-    <meta property="og:url" content="https://stitch.urgdstudios.com">
+    <meta property="og:image" id="og-image" content="">
+    <meta property="og:url" id="og-url" content="">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="ur/gd studios">
     
@@ -20,13 +20,13 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Stitch - SVG to PES Converter">
     <meta name="twitter:description" content="Convert SVG files to PES embroidery format instantly. Professional SVG to PES converter powered by ur/gd studios.">
-    <meta name="twitter:image" content="https://stitch.urgdstudios.com/assets/urgd-logo-og.png">
+    <meta name="twitter:image" id="twitter-image" content="">
     <meta name="twitter:site" content="@urgdstudios">
     
     <!-- Additional Meta Tags -->
     <meta name="author" content="ur/gd studios">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://stitch.urgdstudios.com">
+    <link rel="canonical" id="canonical-url" href="">
     <style>
         @font-face {
             font-family: 'Archivo';
@@ -237,6 +237,25 @@
         function showError(message) { errorMsg.textContent = message; errorMsg.style.display = 'block'; successMsg.style.display = 'none'; }
         function showSuccess(message) { successMsg.textContent = message; successMsg.style.display = 'block'; errorMsg.style.display = 'none'; }
         function hideMessages() { errorMsg.style.display = 'none'; successMsg.style.display = 'none'; }
+    </script>
+    
+    <!-- Environment-aware meta tags -->
+    <script>
+        // Set environment-aware URLs for social media previews
+        (function() {
+            const currentUrl = window.location.href;
+            const baseUrl = currentUrl.split('?')[0]; // Remove query params
+            
+            // Set Open Graph URLs
+            document.getElementById('og-image').setAttribute('content', baseUrl + '/assets/urgd-logo.png');
+            document.getElementById('og-url').setAttribute('content', baseUrl);
+            
+            // Set Twitter Card URLs
+            document.getElementById('twitter-image').setAttribute('content', baseUrl + '/assets/urgd-logo.png');
+            
+            // Set canonical URL
+            document.getElementById('canonical-url').setAttribute('href', baseUrl);
+        })();
     </script>
 </body>
 </html>

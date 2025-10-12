@@ -154,12 +154,19 @@ jobs:
         ENVIRONMENT="${{ env.ENVIRONMENT }}"
         if [ "$ENVIRONMENT" = "prod" ]; then
           API_URL="https://api-prod.stitch.urgd.dev/prod/api"
+          WEBSITE_URL="https://stitch.urgdstudios.com"
         else
           API_URL="https://api-${ENVIRONMENT}.stitch.urgd.dev/${ENVIRONMENT}/api"
+          WEBSITE_URL="https://${ENVIRONMENT}.stitch.urgdstudios.com"
         fi
         
         # Replace the API URL in the HTML file
         sed -i "s|https://api-dev.stitch.urgd.dev/dev/api|$API_URL|g" temp-website/index.html
+        
+        # Replace Open Graph URLs for social media previews
+        sed -i "s|content=\"\"|content=\"$WEBSITE_URL\"|g" temp-website/index.html
+        sed -i "s|href=\"\"|href=\"$WEBSITE_URL\"|g" temp-website/index.html
+        sed -i "s|content=\"\"|content=\"$WEBSITE_URL/assets/urgd-logo.png\"|g" temp-website/index.html
         
         
         # Upload website files to the S3 website bucket
