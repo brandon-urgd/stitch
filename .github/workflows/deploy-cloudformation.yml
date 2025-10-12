@@ -24,8 +24,36 @@ permissions:
   id-token: write
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve VERSION
+        id: version
+        run: |
+          echo "🔍 Resolving VERSION..."
+          
+          if [ -f "VERSION" ]; then
+            VERSION=$(cat VERSION | tr -d '\n\r')
+            echo "✅ Found VERSION file: $VERSION"
+          else
+            # Use commit SHA as primary version for build-once, promote-many
+            VERSION=$(git rev-parse --short HEAD)
+            echo "✅ Using commit SHA as version: $VERSION"
+          fi
+          
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Resolved VERSION: $VERSION"
+
   deploy:
     runs-on: ubuntu-latest
+    needs: version
     
     steps:
     - name: Checkout code
@@ -80,6 +108,70 @@ jobs:
         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION || 'us-west-2' }}
+
+    - name: Generate parameter files
+      if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
+      run: |
+        VERSION="${{ needs.version.outputs.version }}"
+        echo "📝 Generating parameter files for version: $VERSION"
+        
+        mkdir -p parameter-files
+        
+        for env in dev staging prod; do
+          cat > parameter-files/$env.json << EOF
+        [
+          {"ParameterKey": "Environment", "ParameterValue": "$env"},
+          {"ParameterKey": "GitCommit", "ParameterValue": "$VERSION"},
+          {"ParameterKey": "AcmCertArnApiRegion", "ParameterValue": "arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935"},
+          {"ParameterKey": "AcmCertArnCloudFront", "ParameterValue": "arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47"},
+          {"ParameterKey": "UrgdDevHostedZoneId", "ParameterValue": "Z01725332W8W14423YXSC"},
+          {"ParameterKey": "UrgdStudiosHostedZoneId", "ParameterValue": "Z0338626TGE7PTZDLIT1"}
+        ]
+        EOF
+        done
+
+    - name: Copy parameter files for promotions
+      if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'dev'
+      run: |
+        echo "📋 Copying parameter files from original dev build for promotion"
+        
+        # For promotions, we need to find the version that the current dev stack is using
+        echo "🔍 Finding version used by current dev stack..."
+        
+        # Get the GitCommit parameter from the dev stack
+        ORIGINAL_VERSION=$(aws cloudformation describe-stacks \
+          --stack-name "urgd-stitch-dev" \
+          --query 'Stacks[0].Parameters[?ParameterKey==`GitCommit`].ParameterValue' \
+          --output text \
+          --region us-west-2)
+        
+        if [ -z "$ORIGINAL_VERSION" ] || [ "$ORIGINAL_VERSION" = "None" ]; then
+          echo "❌ Could not determine original version from dev stack"
+          echo "🔍 Available parameters:"
+          aws cloudformation describe-stacks \
+            --stack-name "urgd-stitch-dev" \
+            --query 'Stacks[0].Parameters' \
+            --output table \
+            --region us-west-2
+          exit 1
+        fi
+        
+        echo "✅ Found dev stack version: $ORIGINAL_VERSION"
+        echo "🔄 PROMOTION LOGIC: Dev stack is using version $ORIGINAL_VERSION"
+        echo "🔍 PROMOTION LOGIC: Will use parameter files from that same version for consistency"
+        
+        # Set environment variable for use in deployment step
+        echo "ORIGINAL_VERSION=$ORIGINAL_VERSION" >> $GITHUB_ENV
+        
+        # Download parameter files from the original dev build
+        mkdir -p parameter-files
+        echo "📥 Downloading parameter files from original dev build version: $ORIGINAL_VERSION"
+        aws s3 cp "s3://urgd-applicationdata/stitch/cloudformation/$ORIGINAL_VERSION/dev.json" "parameter-files/dev.json" --region us-west-2
+        aws s3 cp "s3://urgd-applicationdata/stitch/cloudformation/$ORIGINAL_VERSION/staging.json" "parameter-files/staging.json" --region us-west-2
+        aws s3 cp "s3://urgd-applicationdata/stitch/cloudformation/$ORIGINAL_VERSION/prod.json" "parameter-files/prod.json" --region us-west-2
+        
+        echo "✅ PROMOTION: Parameter files copied from dev stack version: $ORIGINAL_VERSION"
+        echo "✅ PROMOTION: This ensures template and parameters reference the same version"
         
     - name: Prepare website files
       run: |
@@ -105,14 +197,88 @@ jobs:
         echo "✅ Lambda package uploaded to S3 lambda folder"
         
         # Upload CloudFormation template to cloudformation folder
-        aws s3 cp cloudformation/stitch-infrastructure.yaml s3://urgd-applicationdata/stitch/cloudformation/stitch-infrastructure.yaml
-        echo "✅ CloudFormation template uploaded to S3 cloudformation folder"
+        # Upload versioned template and parameters to S3
+        VERSION="${{ needs.version.outputs.version }}"
+        echo "📤 Uploading CloudFormation template and parameters for version: $VERSION"
+        
+        aws s3 cp "cloudformation/stitch-infrastructure.yaml" \
+          "s3://urgd-applicationdata/stitch/cloudformation/$VERSION/stitch-infrastructure.yaml" \
+          --region us-west-2
+        
+        # Upload parameter files
+        aws s3 cp "parameter-files/" \
+          "s3://urgd-applicationdata/stitch/cloudformation/$VERSION/" \
+          --recursive --region us-west-2
+        echo "✅ Parameter files uploaded for version: $VERSION"
         
     - name: Deploy CloudFormation Stack
       id: cloudfront
+      env:
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        ENV_ENVIRONMENT: ${{ env.ENVIRONMENT }}
       run: |
-        chmod +x scripts/deploy-cloudformation.sh
-        ./scripts/deploy-cloudformation.sh ${{ env.ENVIRONMENT }}
+        VERSION="${{ needs.version.outputs.version }}"
+        ENVIRONMENT="$ENV_ENVIRONMENT"
+        STACK_NAME="urgd-stitch-$ENVIRONMENT"
+        
+        # Determine which version to use
+        if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ "$ENVIRONMENT" != "dev" ]; then
+          # This is a promotion - use the same version as dev stack
+          PARAM_VERSION="${{ env.ORIGINAL_VERSION }}"
+          echo "🚀 PROMOTION: Deploying $STACK_NAME with version: $PARAM_VERSION (from dev stack)"
+        else
+          # This is a dev build - use current version
+          PARAM_VERSION="$VERSION"
+          echo "🚀 DEV BUILD: Deploying $STACK_NAME with version: $PARAM_VERSION (from current commit)"
+        fi
+        
+        # Download parameter file from S3 to temp location
+        TEMP_PARAM_FILE="/tmp/${ENVIRONMENT}-${PARAM_VERSION}.json"
+        aws s3 cp "s3://urgd-applicationdata/stitch/cloudformation/$PARAM_VERSION/$ENVIRONMENT.json" "$TEMP_PARAM_FILE" --region us-west-2
+        
+        # Deploy the stack
+        if aws cloudformation describe-stacks --stack-name $STACK_NAME --region us-west-2 >/dev/null 2>&1; then
+          echo "Stack exists, updating..."
+          if aws cloudformation update-stack \
+            --stack-name $STACK_NAME \
+            --template-url "https://urgd-applicationdata.s3.us-west-2.amazonaws.com/stitch/cloudformation/$PARAM_VERSION/stitch-infrastructure.yaml" \
+            --parameters file://$TEMP_PARAM_FILE \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --region us-west-2 2>&1 | tee /tmp/update-output.log; then
+            echo "✅ Stack update initiated"
+            echo "⏳ Waiting for stack update to complete..."
+            aws cloudformation wait stack-update-complete \
+              --stack-name $STACK_NAME \
+              --region us-west-2
+          else
+            # Check if the error is "No updates are to be performed"
+            if grep -q "No updates are to be performed" /tmp/update-output.log; then
+              echo "✅ Stack is already up to date - no changes needed"
+            else
+              echo "❌ Stack update failed"
+              cat /tmp/update-output.log
+              exit 1
+            fi
+          fi
+        else
+          echo "Stack does not exist, creating..."
+          aws cloudformation create-stack \
+            --stack-name $STACK_NAME \
+            --template-url "https://urgd-applicationdata.s3.us-west-2.amazonaws.com/stitch/cloudformation/$PARAM_VERSION/stitch-infrastructure.yaml" \
+            --parameters file://$TEMP_PARAM_FILE \
+            --capabilities CAPABILITY_NAMED_IAM \
+            --region us-west-2
+          
+          echo "⏳ Waiting for stack creation to complete..."
+          aws cloudformation wait stack-create-complete \
+            --stack-name $STACK_NAME \
+            --region us-west-2
+        fi
+        
+        # Clean up temp file
+        rm -f "$TEMP_PARAM_FILE"
+        
+        echo "✅ Stitch stack $STACK_NAME deployed successfully"
         
         # Get CloudFront Distribution ID for WAF association
         STACK_NAME="urgd-stitch-${{ env.ENVIRONMENT }}"
