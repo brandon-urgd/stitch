@@ -111,7 +111,7 @@ Resources:
             Principal:
               Service: cloudfront.amazonaws.com
             Action: s3:GetObject
-            Resource: !Sub '${StitchWebsiteBucket}/*'
+            Resource: !Sub 'arn:aws:s3:::${StitchWebsiteBucket}/*'
 
   # Lambda Function
   StitchFunction:
