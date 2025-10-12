@@ -3,7 +3,7 @@
 # Deploy Stitch infrastructure using CloudFormation
 set -e
 
-STACK_NAME="stitch-infrastructure"
+STACK_NAME="urgd-stitch-infrastructure"
 TEMPLATE_FILE="cloudformation/stitch-infrastructure.yaml"
 REGION="${AWS_REGION:-us-west-2}"
 
@@ -20,7 +20,8 @@ if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGI
         --parameters ParameterKey=Environment,ParameterValue="prod" \
                    ParameterKey=DomainName,ParameterValue="urgdstudios.com" \
                    ParameterKey=Subdomain,ParameterValue="stitch" \
-                   ParameterKey=CertificateArn,ParameterValue="arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595"
+                   ParameterKey=CertificateArn,ParameterValue="arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595" \
+                   ParameterKey=S3BucketName,ParameterValue="urgd-stitch-storage-prod-198919428218"
     
     echo "⏳ Waiting for stack update to complete..."
     aws cloudformation wait stack-update-complete \
@@ -36,7 +37,8 @@ else
         --parameters ParameterKey=Environment,ParameterValue="prod" \
                    ParameterKey=DomainName,ParameterValue="urgdstudios.com" \
                    ParameterKey=Subdomain,ParameterValue="stitch" \
-                   ParameterKey=CertificateArn,ParameterValue="arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595"
+                   ParameterKey=CertificateArn,ParameterValue="arn:aws:acm:us-east-1:198919428218:certificate/90d330b3-ad6c-4b24-9a9e-9188ededc595" \
+                   ParameterKey=S3BucketName,ParameterValue="urgd-stitch-storage-prod-198919428218"
     
     echo "⏳ Waiting for stack creation to complete..."
     aws cloudformation wait stack-create-complete \

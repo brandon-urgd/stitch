@@ -27,16 +27,25 @@ Parameters:
     Type: String
     Default: 'Z0338626TGE7PTZDLIT1'
     Description: 'Route 53 Hosted Zone ID for the domain'
+  
+  S3BucketName:
+    Type: String
+    Description: 'Name of the existing S3 bucket for Lambda code and layers'
+    Default: ''
 
 Conditions:
   HasCertificate: !Not [!Equals [!Ref CertificateArn, '']]
+  HasS3Bucket: !Not [!Equals [!Ref S3BucketName, '']]
 
 Resources:
-  # S3 Bucket for temporary file storage
+  # Reference existing S3 bucket (created by GitHub workflow)
   StitchStorageBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'urgd-stitch-storage-${Environment}-${AWS::AccountId}'
+      BucketName: !If
+        - HasS3Bucket
+        - !Ref S3BucketName
+        - !Sub 'urgd-stitch-storage-${Environment}-${AWS::AccountId}'
       LifecycleConfiguration:
         Rules:
           - Id: DeleteTempFiles
