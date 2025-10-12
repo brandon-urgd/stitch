@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Stitch SVG to PES Converter - Simple Infrastructure with Function URL'
+Description: 'Stitch SVG to PES Converter'
 
 # Global Tags
 Metadata:
