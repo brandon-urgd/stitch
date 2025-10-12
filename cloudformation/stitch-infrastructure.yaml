@@ -37,12 +37,6 @@ Parameters:
     Default: 'arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47'
     Description: 'ACM certificate ARN for stitch.urgdstudios.com (must be in us-east-1 for CloudFront)'
 
-  # Conditions
-  IsProdEnvironment:
-    !Equals
-      - !Ref Environment
-      - 'prod'
-
   # Route 53 Hosted Zone IDs
   UrgdDevHostedZoneId:
     Type: String
@@ -53,6 +47,13 @@ Parameters:
     Type: String
     Default: 'Z0338626TGE7PTZDLIT1'
     Description: 'Route 53 Hosted Zone ID for urgdstudios.com'
+
+# Conditions
+Conditions:
+  IsProdEnvironment:
+    !Equals
+      - !Ref Environment
+      - 'prod'
 
 Resources:
   # S3 Bucket for user temporary file storage
