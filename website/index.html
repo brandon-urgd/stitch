@@ -184,8 +184,8 @@
                 }, 200);
                 
                     // Use the API Gateway endpoint for conversion
-                    // CloudFront will route /api/* requests to API Gateway
-                    const response = await fetch('/api', { method: 'POST', body: formData });
+                    // URL will be dynamically injected during deployment
+                    const response = await fetch('API_GATEWAY_URL_PLACEHOLDER', { method: 'POST', body: formData });
                 clearInterval(progressInterval);
                 progressFill.style.width = '100%';
                 progressText.textContent = 'Complete!';

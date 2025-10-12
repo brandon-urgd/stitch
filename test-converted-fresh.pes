@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Error><Code>TemporaryRedirect</Code><Message>Please re-send this request to the specified temporary endpoint. Continue to use the original request endpoint for future requests.</Message><Endpoint>urgd-stitch-storage-prod-198919428218.s3-us-west-2.amazonaws.com</Endpoint><Bucket>urgd-stitch-storage-prod-198919428218</Bucket><RequestId>VBQG14YA8Q1P6B1H</RequestId><HostId>c5nGdwATqpERQPph0rCSuiRlTwQ3CjdmCwUlMNiy5FgV5PbvVCh6eObZA+sgQZ7nvDuvgAzUMJsc2TAFOAjlJIM6U/B0ixuY</HostId></Error>
