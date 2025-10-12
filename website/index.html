@@ -493,7 +493,10 @@
                 formData.append('file', selectedFile);
                 
                 // Use the environment-aware API Gateway endpoint for conversion
-                const response = await fetch(`https://api-${environment}.stitch.urgd.dev/${environment}/api`, {
+                const apiUrl = environment === 'prod' 
+                    ? `https://api.stitch.urgd.dev/${environment}/api`
+                    : `https://api-${environment}.stitch.urgd.dev/${environment}/api`;
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     body: formData
                 });
