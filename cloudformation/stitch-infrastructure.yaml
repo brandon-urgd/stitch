@@ -234,6 +234,8 @@ Resources:
         Origins:
           - Id: StitchWebsiteOrigin
             DomainName: !GetAtt StitchWebsiteBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: ''
             OriginAccessControlId: !Ref StitchOriginAccessControl
           - Id: StitchApiOrigin
             DomainName: !Sub '${StitchApiGateway}.execute-api.${AWS::Region}.amazonaws.com'
