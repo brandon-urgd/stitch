@@ -27,8 +27,11 @@ def lambda_handler(event, context):
     """
     
     try:
+        # Get HTTP method from Function URL event structure
+        http_method = event.get('requestContext', {}).get('http', {}).get('method', 'GET')
+        
         # Handle CORS preflight requests
-        if event.get('httpMethod') == 'OPTIONS':
+        if http_method == 'OPTIONS':
             return {
                 'statusCode': 200,
                 'headers': {
@@ -41,7 +44,7 @@ def lambda_handler(event, context):
             }
         
         # Serve HTML frontend on GET requests
-        if event.get('httpMethod') == 'GET':
+        if http_method == 'GET':
             # Check if this is an asset request
             path = event.get('rawPath', '')
             if path and path != '/' and not path.startswith('/?'):
@@ -49,7 +52,7 @@ def lambda_handler(event, context):
             return serve_frontend()
         
         # Handle file conversion on POST requests
-        elif event.get('httpMethod') == 'POST':
+        elif http_method == 'POST':
             return handle_conversion(event, context)
         
         else:
