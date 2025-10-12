@@ -132,13 +132,13 @@ jobs:
       run: |
         # Get the website bucket name directly from the stack
         WEBSITE_BUCKET=$(aws cloudformation describe-stacks \
-          --stack-name urgd-stitch-infrastructure \
+          --stack-name urgd-stitch-${{ env.ENVIRONMENT }} \
           --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucketName`].OutputValue' \
           --output text)
         
         # Get the API Gateway URL from the stack and append /api path
         API_BASE_URL=$(aws cloudformation describe-stacks \
-          --stack-name urgd-stitch-infrastructure \
+          --stack-name urgd-stitch-${{ env.ENVIRONMENT }} \
           --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
           --output text)
         API_URL="${API_BASE_URL}/api"
@@ -170,25 +170,6 @@ jobs:
         
         echo "Website uploaded successfully with dynamic API URL!"
         
-    - name: Get CloudFront Distribution ID
-      id: cloudfront
-      run: |
-        STACK_NAME="urgd-stitch-infrastructure"
-        REGION="${{ secrets.AWS_REGION || 'us-west-2' }}"
-        
-        CLOUDFRONT_ID=$(aws cloudformation describe-stacks \
-          --stack-name "$STACK_NAME" \
-          --region "$REGION" \
-          --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontDistributionId`].OutputValue' \
-          --output text)
-        
-        if [ "$CLOUDFRONT_ID" = "None" ] || [ -z "$CLOUDFRONT_ID" ]; then
-          echo "ℹ️  No CloudFront distribution found in stack outputs"
-          echo "CLOUDFRONT_ID=" >> $GITHUB_OUTPUT
-        else
-          echo "✅ CloudFront Distribution ID: $CLOUDFRONT_ID"
-          echo "CLOUDFRONT_ID=$CLOUDFRONT_ID" >> $GITHUB_OUTPUT
-        fi
         
     - name: Configure AWS credentials (us-east-1)
       uses: aws-actions/configure-aws-credentials@v4
