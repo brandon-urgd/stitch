@@ -2,8 +2,22 @@ name: Deploy Stitch with CloudFormation
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]      # Auto-deploy to dev
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy (dev, staging, prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      confirm_prod:
+        description: 'For PROD: Type "DEPLOY" to confirm'
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -16,6 +30,38 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    - name: Determine environment
+      id: env
+      env:
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_REF: ${{ github.ref }}
+        GITHUB_INPUT_ENVIRONMENT: ${{ github.event.inputs.environment }}
+      run: |
+        # Check if this is a manual workflow dispatch first
+        if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && [ -n "$GITHUB_INPUT_ENVIRONMENT" ]; then
+          echo "ENVIRONMENT=$GITHUB_INPUT_ENVIRONMENT" >> $GITHUB_ENV
+          echo "environment=$GITHUB_INPUT_ENVIRONMENT" >> $GITHUB_OUTPUT
+        elif [ "$GITHUB_REF" = "refs/heads/main" ]; then
+          echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+          echo "environment=dev" >> $GITHUB_OUTPUT
+        else
+          echo "❌ Invalid workflow trigger: $GITHUB_EVENT_NAME on $GITHUB_REF"
+          echo "❌ Expected: push to main OR workflow_dispatch with environment input"
+          exit 1
+        fi
+        echo "✅ Environment determined: ${{ env.ENVIRONMENT }}"
+
+    - name: Validate Production Deployment
+      if: github.event.inputs.environment == 'prod'
+      env:
+        GITHUB_INPUT_CONFIRM_PROD: ${{ github.event.inputs.confirm_prod }}
+      run: |
+        if [ "$GITHUB_INPUT_CONFIRM_PROD" != "DEPLOY" ]; then
+          echo "❌ Production deployment requires confirmation. Please type 'DEPLOY' in the confirm_prod field."
+          exit 1
+        fi
+        echo "✅ Production deployment confirmed"
       
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -49,7 +95,7 @@ jobs:
         echo "📦 Git commit: $GIT_COMMIT"
         
         # Upload Lambda package to lambda folder
-        aws s3 cp lambda-package.zip s3://urgd-applicationdata/stitch/lambda/lambda-prod-${GIT_COMMIT}.zip
+        aws s3 cp lambda-package.zip s3://urgd-applicationdata/stitch/lambda/lambda-${ENVIRONMENT}-${GIT_COMMIT}.zip
         echo "✅ Lambda package uploaded to S3 lambda folder"
         
         # Upload CloudFormation template to cloudformation folder
@@ -59,7 +105,7 @@ jobs:
     - name: Deploy CloudFormation Stack
       run: |
         chmod +x scripts/deploy-cloudformation.sh
-        ./scripts/deploy-cloudformation.sh
+        ./scripts/deploy-cloudformation.sh ${{ env.ENVIRONMENT }}
         
     - name: Upload website to S3
       run: |
@@ -82,6 +128,17 @@ jobs:
         # Create a temporary directory for the website
         mkdir -p temp-website
         cp -r website/* temp-website/
+        
+        # Update the API URL in the website based on environment
+        ENVIRONMENT="${{ env.ENVIRONMENT }}"
+        if [ "$ENVIRONMENT" = "prod" ]; then
+          API_URL="https://api-prod.stitch.urgd.dev/prod/api"
+        else
+          API_URL="https://api-${ENVIRONMENT}.stitch.urgd.dev/${ENVIRONMENT}/api"
+        fi
+        
+        # Replace the API URL in the HTML file
+        sed -i "s|https://api-dev.stitch.urgd.dev/dev/api|$API_URL|g" temp-website/index.html
         
         
         # Upload website files to the S3 website bucket
