@@ -160,10 +160,42 @@ jobs:
       run: |
         # Check if function exists
         if aws lambda get-function --function-name urgd-stitch >/dev/null 2>&1; then
+          # Wait for any in-progress updates to complete
+          echo "Waiting for any in-progress updates to complete..."
+          while true; do
+            STATUS=$(aws lambda get-function --function-name urgd-stitch --query 'Configuration.LastUpdateStatus' --output text 2>/dev/null || echo "Failed")
+            if [ "$STATUS" = "Successful" ]; then
+              echo "Function is ready for updates"
+              break
+            elif [ "$STATUS" = "InProgress" ]; then
+              echo "Function update in progress, waiting 5 seconds..."
+              sleep 5
+            else
+              echo "Function status: $STATUS, proceeding anyway"
+              break
+            fi
+          done
+          
           # Update existing function
           aws lambda update-function-code \
             --function-name urgd-stitch \
             --zip-file fileb://lambda_function.zip
+          
+          # Wait for code update to complete
+          echo "Waiting for code update to complete..."
+          while true; do
+            STATUS=$(aws lambda get-function --function-name urgd-stitch --query 'Configuration.LastUpdateStatus' --output text 2>/dev/null || echo "Failed")
+            if [ "$STATUS" = "Successful" ]; then
+              echo "Code update completed"
+              break
+            elif [ "$STATUS" = "InProgress" ]; then
+              echo "Code update in progress, waiting 3 seconds..."
+              sleep 3
+            else
+              echo "Code update status: $STATUS, proceeding anyway"
+              break
+            fi
+          done
           
           # Only add layer if it was created successfully
           if [ -n "$LAYER_VERSION" ]; then
