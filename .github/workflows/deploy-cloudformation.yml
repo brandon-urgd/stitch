@@ -79,12 +79,10 @@ jobs:
         echo "Uploading website to bucket: $WEBSITE_BUCKET"
         echo "API Gateway URL: $API_URL"
         
-        # Create a temporary directory for the website with injected API URL
+        # Create a temporary directory for the website
         mkdir -p temp-website
         cp -r website/* temp-website/
         
-        # Replace the API URL placeholder in the HTML file
-        sed -i "s|API_GATEWAY_URL_PLACEHOLDER|$API_URL|g" temp-website/index.html
         
         # Upload website files to the S3 website bucket
         aws s3 cp temp-website/ s3://$WEBSITE_BUCKET/ --recursive
@@ -196,20 +194,38 @@ jobs:
         echo ""
         echo "===================="
         
-        # Get API Gateway URL
+        # Get API Gateway URL (use custom domain if available)
         API_URL=$(aws cloudformation describe-stacks \
           --stack-name "$STACK_NAME" \
           --region "$REGION" \
-          --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
+          --query 'Stacks[0].Outputs[?OutputKey==`CustomApiUrl`].OutputValue' \
           --output text)
+        
+        # Fallback to default API URL if custom domain not available
+        if [ "$API_URL" == "None" ] || [ -z "$API_URL" ]; then
+          API_URL=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
+            --output text)
+        fi
         echo "🔗 API Gateway URL: $API_URL"
         
-        # Get CloudFront URL
+        # Get CloudFront URL (use custom domain if available)
         CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
           --stack-name "$STACK_NAME" \
           --region "$REGION" \
-          --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontUrl`].OutputValue' \
+          --query 'Stacks[0].Outputs[?OutputKey==`CustomWebsiteUrl`].OutputValue' \
           --output text)
+        
+        # Fallback to default CloudFront URL if custom domain not available
+        if [ "$CLOUDFRONT_URL" == "None" ] || [ -z "$CLOUDFRONT_URL" ]; then
+          CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --query 'Stacks[0].Outputs[?OutputKey==`CloudFrontUrl`].OutputValue' \
+            --output text)
+        fi
         
         if [ "$CLOUDFRONT_URL" != "None" ] && [ -n "$CLOUDFRONT_URL" ]; then
           echo "☁️  CloudFront URL: $CLOUDFRONT_URL"

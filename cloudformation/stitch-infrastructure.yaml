@@ -21,6 +21,28 @@ Parameters:
     Default: 'latest'
     Description: 'Git commit hash for versioning Lambda deployments'
 
+  # Certificate ARNs for custom domains
+  AcmCertArnApiRegion:
+    Type: String
+    Default: 'arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935'
+    Description: 'ACM certificate ARN for api.stitch.urgd.dev (must be in us-west-2 for API Gateway)'
+
+  AcmCertArnCloudFront:
+    Type: String
+    Default: 'arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47'
+    Description: 'ACM certificate ARN for stitch.urgdstudios.com (must be in us-east-1 for CloudFront)'
+
+  # Route 53 Hosted Zone IDs
+  UrgdDevHostedZoneId:
+    Type: String
+    Default: 'Z01725332W8W14423YXSC'
+    Description: 'Route 53 Hosted Zone ID for urgd.dev'
+
+  UrgdStudiosHostedZoneId:
+    Type: String
+    Default: 'Z0338626TGE7PTZDLIT1'
+    Description: 'Route 53 Hosted Zone ID for urgdstudios.com'
+
 Resources:
   # S3 Bucket for user temporary file storage
   StitchStorageBucket:
@@ -222,6 +244,40 @@ Resources:
       RestApiId: !Ref StitchApiGateway
       StageName: !Ref Environment
 
+  # API Gateway Custom Domain
+  StitchApiGatewayDomainName:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: 'api.stitch.urgd.dev'
+      CertificateArn: !Ref AcmCertArnApiRegion
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+
+  # API Gateway Base Path Mapping
+  StitchApiGatewayBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    Properties:
+      DomainName: !Ref StitchApiGatewayDomainName
+      RestApiId: !Ref StitchApiGateway
+      Stage: !Ref Environment
+
+  # Route 53 Record for API Gateway
+  StitchApiGatewayDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref UrgdDevHostedZoneId
+      Name: 'api.stitch.urgd.dev'
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt StitchApiGatewayDomainName.DistributionDomainName
+        HostedZoneId: !GetAtt StitchApiGatewayDomainName.DistributionHostedZoneId
+
   # CloudFront Distribution
   StitchCloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
@@ -230,6 +286,12 @@ Resources:
         Comment: !Sub 'Stitch SVG to PES Converter - ${Environment}'
         Enabled: true
         DefaultRootObject: index.html
+        Aliases:
+          - 'stitch.urgdstudios.com'
+        ViewerCertificate:
+          AcmCertificateArn: !Ref AcmCertArnCloudFront
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1.2_2021
         Origins:
           - Id: StitchWebsiteOrigin
             DomainName: !GetAtt StitchWebsiteBucket.RegionalDomainName
@@ -290,6 +352,17 @@ Resources:
         - Key: project
           Value: stitch
 
+  # Route 53 Record for CloudFront
+  StitchCloudFrontDnsRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId: !Ref UrgdStudiosHostedZoneId
+      Name: 'stitch.urgdstudios.com'
+      Type: A
+      AliasTarget:
+        DNSName: !GetAtt StitchCloudFrontDistribution.DomainName
+        HostedZoneId: Z2FDTNDATAQYW2
+
 Outputs:
   WebsiteUrl:
     Description: 'S3 Website URL'
@@ -326,3 +399,15 @@ Outputs:
     Value: !Ref StitchWebsiteBucket
     Export:
       Name: !Sub '${AWS::StackName}-WebsiteBucketName'
+
+  CustomApiUrl:
+    Description: 'Custom API Gateway URL'
+    Value: 'https://api.stitch.urgd.dev'
+    Export:
+      Name: !Sub '${AWS::StackName}-CustomApiUrl'
+
+  CustomWebsiteUrl:
+    Description: 'Custom CloudFront URL'
+    Value: 'https://stitch.urgdstudios.com'
+    Export:
+      Name: !Sub '${AWS::StackName}-CustomWebsiteUrl'
