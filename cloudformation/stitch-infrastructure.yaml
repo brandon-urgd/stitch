@@ -2,7 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Stitch SVG to PES Converter - Complete Infrastructure'
 
 # Global Tags
-Transform: AWS::Serverless-2016-10-31
 
 Metadata:
   Tags:

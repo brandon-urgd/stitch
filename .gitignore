@@ -57,3 +57,11 @@ layer.zip
 # Temporary files
 *.tmp
 *.temp
+
+# Test results and reports
+*test-results*
+*checkov-results*
+*semgrep-results*
+*cfn-lint-results*
+response.json
+*.log
