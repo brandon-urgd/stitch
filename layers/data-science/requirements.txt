@@ -1,5 +1,5 @@
-# SCIENTIFIC COMPUTING LAYER
-# Advanced data science and ML tools (under 250MB)
+# DATA SCIENCE LAYER (Largest - under 200MB)
+# Data science and ML tools
 
 # Data Science Powerhouse
 pandas>=2.2.0                     # Data manipulation beast
@@ -7,18 +7,9 @@ scikit-learn>=1.6.0               # Machine learning
 matplotlib>=3.10.0                # Plotting and visualization
 seaborn>=0.13.0                   # Statistical visualization
 
-# Advanced Image Analysis
-scikit-image>=0.24.0              # Advanced image analysis
-imageio>=2.36.0                   # Universal image I/O
-
 # Performance & Optimization
 numba>=0.61.0                     # JIT compilation for speed
 joblib>=1.4.0                     # Parallel processing
-
-# Specialized Formats
-rawpy>=0.20.0                     # RAW camera file support
-exifread>=3.0.0                   # EXIF data extraction
-pillow-heif>=0.16.0               # HEIF/HEIC support
 
 # Graphics & Rendering
 cairosvg>=2.8.0                   # SVG to PNG/PDF conversion

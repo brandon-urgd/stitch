@@ -89,105 +89,152 @@ jobs:
           tcl-dev \
           tk-dev
 
-    - name: Build Image Processing Layer
+    - name: Build Core Image Layer
       run: |
-        echo "🔥 Building Image Processing Layer..."
+        echo "🔥 Building Core Image Layer (smallest)..."
         
         # Create build directory
-        mkdir -p image-layer-build
-        cd image-layer-build
+        mkdir -p core-image-build
+        cd core-image-build
         
         # Copy requirements
-        cp ../layers/image-processing/requirements.txt .
+        cp ../layers/core-image/requirements.txt .
         
         # Install Python dependencies
         pip install --upgrade pip setuptools wheel
-        echo "⚡ Installing image processing dependencies..."
+        echo "⚡ Installing core image dependencies..."
         pip install -r requirements.txt -t ./python/ --no-cache-dir
         
         # Create the layer zip
-        echo "💥 Creating image processing layer package..."
-        zip -r image-processing.zip python/
+        echo "💥 Creating core image layer package..."
+        zip -r core-image.zip python/
         
         # Get the size
-        LAYER_SIZE=$(du -h image-processing.zip | cut -f1)
-        echo "🎯 IMAGE PROCESSING LAYER BUILT! Size: $LAYER_SIZE"
+        LAYER_SIZE=$(du -h core-image.zip | cut -f1)
+        echo "🎯 CORE IMAGE LAYER BUILT! Size: $LAYER_SIZE"
         
         # Upload to S3
-        aws s3 cp image-processing.zip s3://urgd-applicationdata/stitch/layers/image-processing.zip --region us-west-2
+        aws s3 cp core-image.zip s3://urgd-applicationdata/stitch/layers/core-image.zip --region us-west-2
         
-        echo "🚀 IMAGE PROCESSING LAYER DEPLOYED TO S3!"
+        echo "🚀 CORE IMAGE LAYER DEPLOYED TO S3!"
 
-    - name: Build Scientific Computing Layer
+    - name: Build Computer Vision Layer
       run: |
-        echo "🔥 Building Scientific Computing Layer..."
+        echo "🔥 Building Computer Vision Layer (medium)..."
         
         # Create build directory
-        mkdir -p scientific-layer-build
-        cd scientific-layer-build
+        mkdir -p computer-vision-build
+        cd computer-vision-build
         
         # Copy requirements
-        cp ../layers/scientific-computing/requirements.txt .
+        cp ../layers/computer-vision/requirements.txt .
         
         # Install Python dependencies
         pip install --upgrade pip setuptools wheel
-        echo "⚡ Installing scientific computing dependencies..."
+        echo "⚡ Installing computer vision dependencies..."
         pip install -r requirements.txt -t ./python/ --no-cache-dir
         
         # Create the layer zip
-        echo "💥 Creating scientific computing layer package..."
-        zip -r scientific-computing.zip python/
+        echo "💥 Creating computer vision layer package..."
+        zip -r computer-vision.zip python/
         
         # Get the size
-        LAYER_SIZE=$(du -h scientific-computing.zip | cut -f1)
-        echo "🎯 SCIENTIFIC COMPUTING LAYER BUILT! Size: $LAYER_SIZE"
+        LAYER_SIZE=$(du -h computer-vision.zip | cut -f1)
+        echo "🎯 COMPUTER VISION LAYER BUILT! Size: $LAYER_SIZE"
         
         # Upload to S3
-        aws s3 cp scientific-computing.zip s3://urgd-applicationdata/stitch/layers/scientific-computing.zip --region us-west-2
+        aws s3 cp computer-vision.zip s3://urgd-applicationdata/stitch/layers/computer-vision.zip --region us-west-2
         
-        echo "🚀 SCIENTIFIC COMPUTING LAYER DEPLOYED TO S3!"
+        echo "🚀 COMPUTER VISION LAYER DEPLOYED TO S3!"
 
-    - name: Publish Image Processing Layer
+    - name: Build Data Science Layer
       run: |
-        # Create Image Processing layer
-        IMAGE_LAYER_ARN=$(aws lambda publish-layer-version \
-          --layer-name urgd-image-processing-${{ github.event.inputs.environment }} \
-          --description "Image processing and SVG tools - ${{ github.event.inputs.environment }}" \
-          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/image-processing.zip \
+        echo "🔥 Building Data Science Layer (largest)..."
+        
+        # Create build directory
+        mkdir -p data-science-build
+        cd data-science-build
+        
+        # Copy requirements
+        cp ../layers/data-science/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing data science dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating data science layer package..."
+        zip -r data-science.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h data-science.zip | cut -f1)
+        echo "🎯 DATA SCIENCE LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp data-science.zip s3://urgd-applicationdata/stitch/layers/data-science.zip --region us-west-2
+        
+        echo "🚀 DATA SCIENCE LAYER DEPLOYED TO S3!"
+
+    - name: Publish Core Image Layer
+      run: |
+        # Create Core Image layer
+        CORE_IMAGE_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-core-image-${{ github.event.inputs.environment }} \
+          --description "Core image processing and SVG tools - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/core-image.zip \
           --compatible-runtimes python3.12 \
           --compatible-architectures x86_64 \
           --query 'LayerVersionArn' \
           --output text \
           --region us-west-2)
         
-        echo "🎯 Image Processing Layer ARN: $IMAGE_LAYER_ARN"
-        echo "IMAGE_LAYER_ARN=$IMAGE_LAYER_ARN" >> $GITHUB_ENV
+        echo "🎯 Core Image Layer ARN: $CORE_IMAGE_LAYER_ARN"
+        echo "CORE_IMAGE_LAYER_ARN=$CORE_IMAGE_LAYER_ARN" >> $GITHUB_ENV
 
-    - name: Publish Scientific Computing Layer
+    - name: Publish Computer Vision Layer
       run: |
-        # Create Scientific Computing layer
-        SCIENTIFIC_LAYER_ARN=$(aws lambda publish-layer-version \
-          --layer-name urgd-scientific-computing-${{ github.event.inputs.environment }} \
-          --description "Scientific computing and ML tools - ${{ github.event.inputs.environment }}" \
-          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/scientific-computing.zip \
+        # Create Computer Vision layer
+        COMPUTER_VISION_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-computer-vision-${{ github.event.inputs.environment }} \
+          --description "Computer vision and advanced image processing - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/computer-vision.zip \
           --compatible-runtimes python3.12 \
           --compatible-architectures x86_64 \
           --query 'LayerVersionArn' \
           --output text \
           --region us-west-2)
         
-        echo "🎯 Scientific Computing Layer ARN: $SCIENTIFIC_LAYER_ARN"
-        echo "SCIENTIFIC_LAYER_ARN=$SCIENTIFIC_LAYER_ARN" >> $GITHUB_ENV
+        echo "🎯 Computer Vision Layer ARN: $COMPUTER_VISION_LAYER_ARN"
+        echo "COMPUTER_VISION_LAYER_ARN=$COMPUTER_VISION_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Data Science Layer
+      run: |
+        # Create Data Science layer
+        DATA_SCIENCE_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-data-science-${{ github.event.inputs.environment }} \
+          --description "Data science and ML tools - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/data-science.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Data Science Layer ARN: $DATA_SCIENCE_LAYER_ARN"
+        echo "DATA_SCIENCE_LAYER_ARN=$DATA_SCIENCE_LAYER_ARN" >> $GITHUB_ENV
 
     - name: Output Layer Info
       run: |
-        echo "🚀 BOTH LAMBDA LAYERS DEPLOYED!"
-        echo "💪 Image Processing Layer ARN: $IMAGE_LAYER_ARN"
-        echo "💪 Scientific Computing Layer ARN: $SCIENTIFIC_LAYER_ARN"
+        echo "🚀 ALL THREE LAMBDA LAYERS DEPLOYED!"
+        echo "💪 Core Image Layer ARN: $CORE_IMAGE_LAYER_ARN"
+        echo "💪 Computer Vision Layer ARN: $COMPUTER_VISION_LAYER_ARN"
+        echo "💪 Data Science Layer ARN: $DATA_SCIENCE_LAYER_ARN"
         echo "🔥 Ready to power your Lambda functions!"
-        echo "⚡ Split into focused layers for maximum efficiency!"
+        echo "⚡ Split into THREE focused layers for maximum efficiency!"
         echo ""
         echo "📝 To use these layers in your Lambda functions:"
         echo "   Layers:"
-        echo "     - $IMAGE_LAYER_ARN"
-        echo "     - $SCIENTIFIC_LAYER_ARN"
+        echo "     - $CORE_IMAGE_LAYER_ARN"
+        echo "     - $COMPUTER_VISION_LAYER_ARN"
+        echo "     - $DATA_SCIENCE_LAYER_ARN"

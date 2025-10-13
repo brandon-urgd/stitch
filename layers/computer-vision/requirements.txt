@@ -1,0 +1,15 @@
+# COMPUTER VISION LAYER (Medium - under 150MB)
+# OpenCV and advanced image processing
+
+# Computer Vision
+opencv-python>=4.10.0             # Computer vision powerhouse
+scipy>=1.15.0                     # Scientific algorithms
+
+# Advanced Image Analysis
+scikit-image>=0.24.0              # Advanced image analysis
+imageio>=2.36.0                   # Universal image I/O
+
+# Specialized Formats
+rawpy>=0.20.0                     # RAW camera file support
+exifread>=3.0.0                   # EXIF data extraction
+pillow-heif>=0.16.0               # HEIF/HEIC support
