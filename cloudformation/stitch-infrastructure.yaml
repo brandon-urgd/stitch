@@ -18,8 +18,13 @@ Parameters:
   
   StitchFunctionCodeKey:
     Type: String
-    Default: 'stitch/lambda/lambda-dev-latest.zip'
+    Default: 'stitch/artifacts/latest/stitch-function-latest.zip'
     Description: 'S3 key for Stitch SVG Converter Lambda function code'
+  
+  GitCommit:
+    Type: String
+    Default: 'latest'
+    Description: 'Git commit hash for versioning'
 
   # Certificate ARNs for custom domains
   AcmCertArnApiRegion:
@@ -151,7 +156,7 @@ Resources:
   StitchSvgConverterFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub 'urgd-stitch-svg-converter-${Environment}'
+      FunctionName: !Sub 'urgd-stitch-svg-converter-${Environment}-${GitCommit}'
       Runtime: python3.11
       Handler: svg_converter.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
