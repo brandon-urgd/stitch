@@ -104,7 +104,7 @@ jobs:
         
     - name: Install system dependencies (NUCLEAR OPTION)
       run: |
-        echo "🚀 Installing EVERY system dependency known to man..."
+        echo "🚀 Installing system dependencies for ultimate layer..."
         sudo apt-get update
         sudo apt-get install -y \
           libjpeg-dev \
@@ -113,11 +113,8 @@ jobs:
           libwebp-dev \
           libopenjp2-7-dev \
           libopenjp2-7 \
-          libjpeg-turbo8-dev \
           libopencv-dev \
           libopencv-contrib-dev \
-          libgstreamer1.0-dev \
-          libgstreamer-plugins-base1.0-dev \
           libopenblas-dev \
           liblapack-dev \
           libatlas-base-dev \
@@ -129,7 +126,7 @@ jobs:
           protobuf-compiler \
           libcairo2-dev \
           libpango1.0-dev \
-          libgdk-pixbuf2.0-dev \
+          libgdk-pixbuf-2.0-dev \
           libglib2.0-dev \
           libgobject-2.0-dev \
           libffi-dev \
