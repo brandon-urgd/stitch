@@ -1,3 +1,0 @@
-# SKIMAGE FILTERS LAYER (Image filtering and enhancement)
-# Core image filtering without heavy dependencies
-scikit-image>=0.24.0
