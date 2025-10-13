@@ -1,4 +1,4 @@
-name: Build Ultimate 5-Layer Lambda Arsenal
+name: Build Lambda Layers
 
 on:
   workflow_dispatch:
@@ -80,12 +80,12 @@ jobs:
             wget \
             unzip
 
-      - name: Build All 5 Layers
+      - name: Build All 4 Layers
         run: |
-          echo "🔥 Building all 5 focused Lambda layers..."
+          echo "🔥 Building all 4 focused Lambda layers..."
           
           # List of all layers
-          layers=("core-image" "computer-vision" "svg-embroidery" "file-io" "output-formats")
+          layers=("core-image" "svg-embroidery" "file-io" "output-formats")
           
           # Build each layer
           for layer in "${layers[@]}"; do
@@ -120,12 +120,12 @@ jobs:
             cd ..
           done
 
-      - name: Publish All 5 Layers
+      - name: Publish All 4 Layers
         run: |
-          echo "🔥 Publishing all 5 Lambda layers..."
+          echo "🔥 Publishing all 4 Lambda layers..."
           
           # List of all layers
-          layers=("core-image" "computer-vision" "svg-embroidery" "file-io" "output-formats")
+          layers=("core-image" "svg-embroidery" "file-io" "output-formats")
           
           # Publish each layer
           for layer in "${layers[@]}"; do
@@ -148,14 +148,13 @@ jobs:
 
       - name: Output Layer Info
         run: |
-          echo "🚀 ALL 5 LAMBDA LAYERS DEPLOYED!"
+          echo "🚀 ALL 4 LAMBDA LAYERS DEPLOYED!"
           echo "💪 The ultimate focused Python arsenal is ready!"
-          echo "🔥 5 focused layers - maximum efficiency!"
+          echo "🔥 4 focused layers - maximum efficiency!"
           echo "⚡ Ready to power your Lambda functions!"
           echo ""
           echo "📝 Layer ARNs:"
           echo "  - $CORE_IMAGE_LAYER_ARN"
-          echo "  - $COMPUTER_VISION_LAYER_ARN"
           echo "  - $SVG_EMBROIDERY_LAYER_ARN"
           echo "  - $FILE_IO_LAYER_ARN"
           echo "  - $OUTPUT_FORMATS_LAYER_ARN"

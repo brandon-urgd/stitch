@@ -1,0 +1,4 @@
+# OPENCV LAYER
+# Computer vision powerhouse
+
+opencv-python>=4.10.0

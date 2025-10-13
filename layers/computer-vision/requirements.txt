@@ -1,6 +1,0 @@
-# COMPUTER VISION LAYER
-# Computer vision and scientific computing
-
-# Computer Vision
-opencv-python>=4.10.0             # Computer vision powerhouse
-scipy>=1.15.0                     # Scientific algorithms

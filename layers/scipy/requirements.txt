@@ -1,0 +1,4 @@
+# SCIPY LAYER
+# Scientific algorithms
+
+scipy>=1.15.0
