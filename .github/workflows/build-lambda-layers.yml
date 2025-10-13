@@ -80,6 +80,16 @@ jobs:
             wget \
             unzip
 
+      - name: Create S3 Folder Structure
+        run: |
+          echo "📁 Creating S3 folder structure..."
+          
+          # Create the layers folder in S3 (this creates the folder if it doesn't exist)
+          echo "Creating stitch/layers/ folder in S3..."
+          aws s3api put-object --bucket urgd-applicationdata --key stitch/layers/ --region us-west-2
+          
+          echo "✅ S3 folder structure created"
+
       - name: Build 2 Essential Layers
         run: |
           echo "🔥 Building 2 essential Lambda layers..."
@@ -118,23 +128,6 @@ jobs:
             
             # Go back to root
             cd ..
-          done
-
-      - name: Upload Layers to S3
-        run: |
-          echo "📤 Uploading layers to S3..."
-          
-          # List of all layers
-          layers=("core-image" "svg-embroidery")
-          
-          # Upload each layer to S3
-          for layer in "${layers[@]}"; do
-            echo "📤 Uploading $layer layer to S3..."
-            
-            # Upload to S3
-            aws s3 cp ${layer}.zip s3://urgd-applicationdata/stitch/layers/${layer}.zip --region us-west-2
-            
-            echo "✅ $layer layer uploaded to S3"
           done
 
       - name: Publish 2 Essential Layers
