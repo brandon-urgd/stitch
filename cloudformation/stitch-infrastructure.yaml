@@ -16,11 +16,6 @@ Parameters:
     Description: 'Environment name (prod, dev, staging)'
     AllowedValues: ['prod', 'dev', 'staging']
   
-  GitCommit:
-    Type: String
-    Default: 'latest'
-    Description: 'Git commit hash for versioning Lambda deployments'
-
   StitchFunctionCodeKey:
     Type: String
     Default: 'stitch/lambda/lambda-dev-latest.zip'

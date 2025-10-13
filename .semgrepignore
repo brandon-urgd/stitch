@@ -1,0 +1,3 @@
+# Ignore false positive for canonical link integrity check
+# Canonical links don't load external resources and don't need integrity attributes
+website/index.html:27
