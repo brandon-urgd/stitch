@@ -16,11 +16,20 @@ from typing import List, Tuple, Dict, Any, Optional
 # SVG parsing and path handling
 try:
     from svgpathtools import parse_path, Path, Line, CubicBezier, QuadraticBezier, Arc
-    from svg.path import parse_path as parse_path_simple
     SVGPATHTOOLS_AVAILABLE = True
+    print("svgpathtools library loaded successfully")
 except ImportError:
     SVGPATHTOOLS_AVAILABLE = False
-    print("Warning: svgpathtools not available, using basic path parsing")
+    print("Warning: svgpathtools not available, trying svg.path")
+
+# Try svg.path as a lighter alternative
+try:
+    from svg.path import parse_path as parse_path_simple
+    SVGPATH_AVAILABLE = True
+    print("svg.path library loaded successfully")
+except ImportError:
+    SVGPATH_AVAILABLE = False
+    print("Warning: svg.path not available, using basic path parsing")
 
 # Multipart form data parsing
 try:
@@ -284,6 +293,24 @@ def convert_path_to_coordinates(path_data: str, transform: str = None) -> List[T
                     coords.append((point.real, point.imag))
             
             return coords
+        elif SVGPATH_AVAILABLE:
+            # Use svg.path as a lighter alternative
+            try:
+                path = parse_path_simple(path_data)
+                coords = []
+                
+                # Sample points along the path
+                for i in range(0, 1000, 10):  # Sample every 10th point
+                    t = i / 1000.0
+                    if t <= 1.0:
+                        point = path.point(t)
+                        coords.append((point.real, point.imag))
+                
+                return coords
+            except Exception as e:
+                print(f"Error with svg.path parsing: {e}")
+                # Fall back to basic path parsing
+                return parse_basic_path(path_data)
         else:
             # Basic path parsing fallback
             return parse_basic_path(path_data)
