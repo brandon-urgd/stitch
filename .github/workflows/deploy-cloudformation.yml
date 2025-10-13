@@ -304,12 +304,12 @@ jobs:
           --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucketName`].OutputValue' \
           --output text)
         
-        # Get the API Gateway URL from the stack and append /api path
+        # Get the API Gateway URL from the stack and append /convert/svg path
         API_BASE_URL=$(aws cloudformation describe-stacks \
           --stack-name urgd-stitch-${{ env.ENVIRONMENT }} \
           --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
           --output text)
-        API_URL="${API_BASE_URL}/api"
+        API_URL="${API_BASE_URL}/convert/svg"
         
         echo "Uploading website to bucket: $WEBSITE_BUCKET"
         echo "API Gateway URL: $API_URL"
@@ -321,15 +321,15 @@ jobs:
         # Update the API URL in the website based on environment
         ENVIRONMENT="${{ env.ENVIRONMENT }}"
         if [ "$ENVIRONMENT" = "prod" ]; then
-          API_URL="https://api.stitch.urgd.dev/prod/api"
+          API_URL="https://api.stitch.urgd.dev/prod/convert/svg"
           WEBSITE_URL="https://stitch.urgdstudios.com"
         else
-          API_URL="https://api-${ENVIRONMENT}.stitch.urgd.dev/${ENVIRONMENT}/api"
+          API_URL="https://api-${ENVIRONMENT}.stitch.urgd.dev/${ENVIRONMENT}/convert/svg"
           WEBSITE_URL="https://${ENVIRONMENT}.stitch.urgdstudios.com"
         fi
         
         # Replace the API URL in the HTML file
-        sed -i "s|https://api-dev.stitch.urgd.dev/dev/api|$API_URL|g" temp-website/index.html
+        sed -i "s|https://api-dev.stitch.urgd.dev/dev/convert/svg|$API_URL|g" temp-website/index.html
         
         # Replace Open Graph URLs for social media previews
         sed -i "s|content=\"\"|content=\"$WEBSITE_URL\"|g" temp-website/index.html

@@ -494,8 +494,8 @@
                 
                 // Use the environment-aware API Gateway endpoint for conversion
                 const apiUrl = environment === 'prod' 
-                    ? `https://api.stitch.urgd.dev/${environment}/api`
-                    : `https://api-${environment}.stitch.urgd.dev/${environment}/api`;
+                    ? `https://api.stitch.urgd.dev/${environment}/convert/svg`
+                    : `https://api-${environment}.stitch.urgd.dev/${environment}/convert/svg`;
                 const response = await fetch(apiUrl, {
                     method: 'POST',
                     body: formData

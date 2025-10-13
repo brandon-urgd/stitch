@@ -48,8 +48,8 @@ If you prefer to deploy manually:
      --function-name urgd-stitch \
      --runtime python3.11 \
      --role arn:aws:iam::YOUR_ACCOUNT_ID:role/lambda-execution-role \
-     --handler lambda_function.lambda_handler \
-     --zip-file fileb://lambda/lambda_function.zip
+     --handler svg_converter.lambda_handler \
+     --zip-file fileb://lambda/svg_converter.zip
    ```
 
 3. **Create Function URL**
@@ -63,9 +63,21 @@ If you prefer to deploy manually:
 ## Testing
 
 1. Open the Function URL in your browser
-2. Upload a test SVG file
+2. Upload a test SVG file (try the heart SVG from desktop)
 3. Verify the PES file downloads correctly
 4. Test with your embroidery machine
+
+### Professional Quality Validation
+The converter now includes professional embroidery standards:
+- **6.3 SPI density** for smooth, even coverage
+- **Intelligent stitch selection** (satin vs fill based on shape width)
+- **Underlay stitches** for fabric stability
+- **Quality control** with coordinate validation and length limits
+
+### Test Files
+- Use `test-heart.svg` from desktop for testing
+- Expected output: `test-heart.pes` with professional quality
+- Verify stitch density and pattern quality
 
 ## Troubleshooting
 

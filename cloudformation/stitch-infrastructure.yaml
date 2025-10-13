@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Stitch SVG to PES Converter'
+Description: 'stitch Scalable Multi-Converter Architecture'
 
 # Global Tags
 Metadata:
@@ -24,7 +24,7 @@ Parameters:
   StitchFunctionCodeKey:
     Type: String
     Default: 'stitch/lambda/lambda-dev-latest.zip'
-    Description: 'S3 key for Stitch Lambda function code'
+    Description: 'S3 key for Stitch SVG Converter Lambda function code'
 
   # Certificate ARNs for custom domains
   AcmCertArnApiRegion:
@@ -153,12 +153,12 @@ Resources:
             Resource: !Sub 'arn:aws:s3:::${StitchWebsiteBucket}/*'
 
   # Lambda Function
-  StitchFunction:
+  StitchSvgConverterFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub 'urgd-stitch-${Environment}'
+      FunctionName: !Sub 'urgd-stitch-svg-converter-${Environment}'
       Runtime: python3.11
-      Handler: lambda_function.lambda_handler
+      Handler: svg_converter.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
         S3Bucket: 'urgd-applicationdata'
@@ -178,7 +178,7 @@ Resources:
   StitchApiGateway:
     Type: AWS::ApiGateway::RestApi
     Properties:
-      Name: !Sub 'urgd-stitch-api-${Environment}'
+      Name: !Sub 'urgd-stitch-svg-converter-api-${Environment}'
       Description: 'API Gateway for Stitch SVG to PES converter API'
       EndpointConfiguration:
         Types:
@@ -195,38 +195,46 @@ Resources:
   StitchApiGatewayPermission:
     Type: AWS::Lambda::Permission
     Properties:
-      FunctionName: !Ref StitchFunction
+      FunctionName: !Ref StitchSvgConverterFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${StitchApiGateway}/*/*'
 
-  # API Gateway Resource for /api path
-  StitchApiResource:
+  # API Gateway Resource for /convert path
+  StitchConvertResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId: !Ref StitchApiGateway
       ParentId: !GetAtt StitchApiGateway.RootResourceId
-      PathPart: api
+      PathPart: convert
+
+  # API Gateway Resource for /convert/svg path
+  StitchSvgResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ParentId: !Ref StitchConvertResource
+      PathPart: svg
 
   # API Gateway Method for POST requests
-  StitchApiGatewayMethod:
+  StitchSvgConverterMethod:
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref StitchApiGateway
-      ResourceId: !Ref StitchApiResource
+      ResourceId: !Ref StitchSvgResource
       HttpMethod: POST
       AuthorizationType: NONE
       Integration:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
-        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StitchFunction.Arn}/invocations'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StitchSvgConverterFunction.Arn}/invocations'
 
   # API Gateway Method for OPTIONS requests (CORS)
-  StitchApiGatewayOptionsMethod:
+  StitchSvgConverterOptionsMethod:
     Type: AWS::ApiGateway::Method
     Properties:
       RestApiId: !Ref StitchApiGateway
-      ResourceId: !Ref StitchApiResource
+      ResourceId: !Ref StitchSvgResource
       HttpMethod: OPTIONS
       AuthorizationType: NONE
       Integration:
@@ -250,8 +258,8 @@ Resources:
   StitchApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: 
-      - StitchApiGatewayMethod
-      - StitchApiGatewayOptionsMethod
+      - StitchSvgConverterMethod
+      - StitchSvgConverterOptionsMethod
     Properties:
       RestApiId: !Ref StitchApiGateway
       StageName: !Ref Environment
@@ -303,7 +311,7 @@ Resources:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
-        Comment: !Sub 'Stitch SVG to PES Converter - ${Environment}'
+        Comment: !Sub 'Stitch Scalable Multi-Converter Architecture - ${Environment}'
         Enabled: true
         DefaultRootObject: index.html
         Aliases:
@@ -345,7 +353,7 @@ Resources:
           DefaultTTL: 86400
           MaxTTL: 31536000
         CacheBehaviors:
-          - PathPattern: '/api/*'
+          - PathPattern: '/convert/*'
             TargetOriginId: StitchApiOrigin
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:

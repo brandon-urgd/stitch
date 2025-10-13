@@ -10,9 +10,12 @@ Simply upload an SVG file and get a perfectly formatted PES file for your embroi
 
 ## ✨ Features
 
+- **Professional Quality** - Industry-standard 6.3 SPI stitch density
+- **Intelligent Stitching** - Automatic satin vs fill stitch selection
+- **Underlay Support** - Fabric stability with professional underlay stitches
+- **Quality Control** - Comprehensive validation and error handling
 - **Drag & Drop Interface** - Easy file upload with visual feedback
 - **Real-time Conversion** - Server-side processing with progress indicators
-- **Production Quality** - Uses pyembroidery library for accurate conversions
 - **Instant Download** - Get your PES file immediately after conversion
 - **Mobile Friendly** - Responsive design works on all devices
 - **ur/gd Branding** - Professional design with ur/gd visual identity
@@ -54,7 +57,7 @@ urgd-applicationdata/stitch/
 # Test Lambda function locally
 cd lambda
 pip install -r requirements.txt
-python lambda_function.py
+python svg_converter.py
 
 # Test with sample SVG
 curl -X POST -F "file=@test-heart.svg" https://your-api-gateway-url/prod/api
@@ -63,7 +66,7 @@ curl -X POST -F "file=@test-heart.svg" https://your-api-gateway-url/prod/api
 ### Adding New Formats
 The architecture supports easy addition of new embroidery formats:
 
-1. Update `lambda/lambda_function.py` with new format support
+1. Update `lambda/svg_converter.py` with new format support
 2. Modify `website/index.html` to include format selection
 3. Push changes - automatic deployment handles the rest
 
@@ -85,7 +88,7 @@ stitch/
 ├── cloudformation/
 │   └── stitch-infrastructure.yaml   # AWS infrastructure
 ├── lambda/
-│   ├── lambda_function.py           # Main conversion logic
+│   ├── svg_converter.py             # Main conversion logic
 │   └── requirements.txt             # Python dependencies
 ├── website/
 │   ├── index.html                   # Frontend interface
@@ -113,6 +116,9 @@ stitch/
 
 ## 🔒 Security & Quality
 
+- **Professional Standards**: 6.3 SPI density, proper stitch lengths
+- **Intelligent Processing**: Automatic stitch type selection based on shape width
+- **Quality Validation**: Coordinate validation, length limits, memory management
 - **Input Validation**: SVG file type verification
 - **Error Handling**: Graceful failure with user feedback
 - **File Cleanup**: Automatic temporary file deletion
@@ -123,8 +129,18 @@ stitch/
 
 - **Global CDN**: CloudFront edge locations worldwide
 - **Serverless**: Pay-per-use Lambda scaling
-- **Fast Conversion**: Optimized pyembroidery processing
+- **Fast Conversion**: Optimized professional quality processing
+- **Memory Efficient**: 2000 stitches per block limit
 - **Efficient Storage**: Lifecycle policies for cleanup
+
+## 🎯 Professional Quality Standards
+
+- **Stitch Density**: 6.3 SPI (4mm row spacing) - Professional standard
+- **Stitch Lengths**: Fill (1.5mm), Satin (2.0mm), Running (2.5mm)
+- **Intelligent Selection**: Satin for shapes <8mm, Fill for shapes ≥8mm
+- **Underlay Stitches**: Perpendicular underlay for fabric stability
+- **Quality Control**: Max 4mm stitch length, min 0.5mm, coordinate validation
+- **Memory Management**: 2000 stitches per block to prevent issues
 
 ---
 
