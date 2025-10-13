@@ -152,15 +152,15 @@ Resources:
             Action: s3:GetObject
             Resource: !Sub 'arn:aws:s3:::${StitchWebsiteBucket}/*'
 
-  # Core Image Lambda Layer
-  CoreImageLayer:
+  # Pillow Lambda Layer
+  PillowLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-core-image-${Environment}'
-      Description: "Core image processing and SVG tools for stitch conversion"
+      LayerName: !Sub 'urgd-pillow-${Environment}'
+      Description: "Pillow - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/core-image.zip'
+        S3Key: 'stitch/layers/pillow.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -168,15 +168,15 @@ Resources:
       LicenseInfo: "MIT"
       RetentionPolicy: Retain
 
-  # OpenCV Core Lambda Layer
-  OpenCVCoreLayer:
+  # Numpy Lambda Layer
+  NumpyLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-opencv-core-${Environment}'
-      Description: "OpenCV core and essential image processing"
+      LayerName: !Sub 'urgd-numpy-${Environment}'
+      Description: "Numpy - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/opencv-core.zip'
+        S3Key: 'stitch/layers/numpy.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -184,15 +184,15 @@ Resources:
       LicenseInfo: "MIT"
       RetentionPolicy: Retain
 
-  # Advanced Image Lambda Layer
-  AdvancedImageLayer:
+  # Opencv Lambda Layer
+  OpencvLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-advanced-image-${Environment}'
-      Description: "Advanced image analysis and specialized formats"
+      LayerName: !Sub 'urgd-opencv-${Environment}'
+      Description: "Opencv - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/advanced-image.zip'
+        S3Key: 'stitch/layers/opencv.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -200,15 +200,15 @@ Resources:
       LicenseInfo: "MIT"
       RetentionPolicy: Retain
 
-  # ML Core Lambda Layer
-  MLCoreLayer:
+  # Scipy Lambda Layer
+  ScipyLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-ml-core-${Environment}'
-      Description: "Machine learning core tools"
+      LayerName: !Sub 'urgd-scipy-${Environment}'
+      Description: "Scipy - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/ml-core.zip'
+        S3Key: 'stitch/layers/scipy.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -216,15 +216,15 @@ Resources:
       LicenseInfo: "MIT"
       RetentionPolicy: Retain
 
-  # Data Viz Lambda Layer
-  DataVizLayer:
+  # Svgpathtools Lambda Layer
+  SvgpathtoolsLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-data-viz-${Environment}'
-      Description: "Data visualization and analysis"
+      LayerName: !Sub 'urgd-svgpathtools-${Environment}'
+      Description: "Svgpathtools - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/data-viz.zip'
+        S3Key: 'stitch/layers/svgpathtools.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -232,15 +232,271 @@ Resources:
       LicenseInfo: "MIT"
       RetentionPolicy: Retain
 
-  # Graphics Render Lambda Layer
-  GraphicsRenderLayer:
+  # Svgpath Lambda Layer
+  SvgpathLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-graphics-render-${Environment}'
-      Description: "Graphics and document rendering"
+      LayerName: !Sub 'urgd-svgpath-${Environment}'
+      Description: "Svgpath - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/graphics-render.zip'
+        S3Key: 'stitch/layers/svgpath.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Pyembroidery Lambda Layer
+  PyembroideryLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-pyembroidery-${Environment}'
+      Description: "Pyembroidery - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/pyembroidery.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Multipart Lambda Layer
+  MultipartLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-multipart-${Environment}'
+      Description: "Multipart - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/multipart.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Scikit-Image Lambda Layer
+  ScikitImageLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-scikit-image-${Environment}'
+      Description: "Scikit-Image - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/scikit-image.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Imageio Lambda Layer
+  ImageioLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-imageio-${Environment}'
+      Description: "Imageio - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/imageio.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Rawpy Lambda Layer
+  RawpyLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-rawpy-${Environment}'
+      Description: "Rawpy - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/rawpy.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Exifread Lambda Layer
+  ExifreadLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-exifread-${Environment}'
+      Description: "Exifread - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/exifread.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Pillow-Heif Lambda Layer
+  PillowHeifLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-pillow-heif-${Environment}'
+      Description: "Pillow-Heif - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/pillow-heif.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Scikit-Learn Lambda Layer
+  ScikitLearnLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-scikit-learn-${Environment}'
+      Description: "Scikit-Learn - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/scikit-learn.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Numba Lambda Layer
+  NumbaLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-numba-${Environment}'
+      Description: "Numba - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/numba.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Joblib Lambda Layer
+  JoblibLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-joblib-${Environment}'
+      Description: "Joblib - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/joblib.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Pandas Lambda Layer
+  PandasLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-pandas-${Environment}'
+      Description: "Pandas - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/pandas.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Matplotlib Lambda Layer
+  MatplotlibLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-matplotlib-${Environment}'
+      Description: "Matplotlib - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/matplotlib.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Seaborn Lambda Layer
+  SeabornLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-seaborn-${Environment}'
+      Description: "Seaborn - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/seaborn.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Cairosvg Lambda Layer
+  CairosvgLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-cairosvg-${Environment}'
+      Description: "Cairosvg - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/cairosvg.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Svglib Lambda Layer
+  SvglibLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-svglib-${Environment}'
+      Description: "Svglib - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/svglib.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Reportlab Lambda Layer
+  ReportlabLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-reportlab-${Environment}'
+      Description: "Reportlab - ${Environment}"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/reportlab.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -257,12 +513,28 @@ Resources:
       Handler: svg_converter.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Layers:
-        - !Ref CoreImageLayer
-        - !Ref OpenCVCoreLayer
-        - !Ref AdvancedImageLayer
-        - !Ref MLCoreLayer
-        - !Ref DataVizLayer
-        - !Ref GraphicsRenderLayer
+        - !Ref PillowLayer
+        - !Ref NumpyLayer
+        - !Ref OpencvLayer
+        - !Ref ScipyLayer
+        - !Ref SvgpathtoolsLayer
+        - !Ref SvgpathLayer
+        - !Ref PyembroideryLayer
+        - !Ref MultipartLayer
+        - !Ref ScikitImageLayer
+        - !Ref ImageioLayer
+        - !Ref RawpyLayer
+        - !Ref ExifreadLayer
+        - !Ref PillowHeifLayer
+        - !Ref ScikitLearnLayer
+        - !Ref NumbaLayer
+        - !Ref JoblibLayer
+        - !Ref PandasLayer
+        - !Ref MatplotlibLayer
+        - !Ref SeabornLayer
+        - !Ref CairosvgLayer
+        - !Ref SvglibLayer
+        - !Ref ReportlabLayer
       Code:
         S3Bucket: 'urgd-applicationdata'
         S3Key: !Ref StitchFunctionCodeKey
