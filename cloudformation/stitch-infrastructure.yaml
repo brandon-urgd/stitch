@@ -167,20 +167,6 @@ Resources:
         - x86_64
       LicenseInfo: "MIT"
 
-  # Computer Vision Lambda Layer
-  ComputerVisionLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      LayerName: !Sub 'urgd-computer-vision-${Environment}'
-      Description: !Sub "Computer vision and scientific computing - ${Environment}"
-      Content:
-        S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/computer-vision.zip'
-      CompatibleRuntimes:
-        - python3.12
-      CompatibleArchitectures:
-        - x86_64
-      LicenseInfo: "MIT"
 
   # SVG & Embroidery Lambda Layer
   SvgEmbroideryLayer:
@@ -237,7 +223,6 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Layers:
         - !Ref CoreImageLayer
-        - !Ref ComputerVisionLayer
         - !Ref SvgEmbroideryLayer
         - !Ref FileIOLayer
         - !Ref OutputFormatsLayer
