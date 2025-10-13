@@ -1,0 +1,2 @@
+# SVGPATHTOOLS LAYER (SVG path manipulation)
+svgpathtools>=1.7.1

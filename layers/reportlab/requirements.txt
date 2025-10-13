@@ -1,0 +1,2 @@
+# REPORTLAB LAYER (PDF generation)
+reportlab>=4.2.0

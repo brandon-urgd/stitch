@@ -1,0 +1,2 @@
+# NUMBA LAYER (JIT compilation for speed)
+numba>=0.61.0

@@ -1,0 +1,2 @@
+# MATPLOTLIB LAYER (Plotting and visualization)
+matplotlib>=3.10.0

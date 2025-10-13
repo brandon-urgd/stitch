@@ -1,0 +1,2 @@
+# SCIKIT-IMAGE LAYER (Advanced image analysis)
+scikit-image>=0.24.0

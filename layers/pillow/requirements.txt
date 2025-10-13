@@ -1,0 +1,2 @@
+# PILLOW LAYER (Essential image processing)
+Pillow>=11.3.0

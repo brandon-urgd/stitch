@@ -1,0 +1,2 @@
+# SVGLIB LAYER (SVG to other formats)
+svglib>=1.6.0

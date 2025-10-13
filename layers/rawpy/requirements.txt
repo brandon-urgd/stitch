@@ -1,0 +1,2 @@
+# RAWPY LAYER (RAW camera file support)
+rawpy>=0.20.0

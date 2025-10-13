@@ -1,0 +1,2 @@
+# PYEMBROIDERY LAYER (Embroidery file support)
+pyembroidery>=1.5.1

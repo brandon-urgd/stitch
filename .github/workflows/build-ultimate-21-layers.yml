@@ -1,0 +1,1104 @@
+name: Build Ultimate 21-Layer Lambda Arsenal
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (dev/staging/prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+jobs:
+  build-ultimate-layers:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-west-2
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            libjpeg-dev \
+            libpng-dev \
+            libtiff-dev \
+            libfreetype6-dev \
+            liblcms2-dev \
+            libwebp-dev \
+            libharfbuzz-dev \
+            libfribidi-dev \
+            libxcb1-dev \
+            libffi-dev \
+            libssl-dev \
+            zlib1g-dev \
+            libbz2-dev \
+            libreadline-dev \
+            libsqlite3-dev \
+            libncursesw5-dev \
+            xz-utils \
+            tk-dev \
+            libxml2-dev \
+            libxmlsec1-dev \
+            libffi-dev \
+            liblzma-dev \
+            libopenblas-dev \
+            liblapack-dev \
+            gfortran \
+            libhdf5-dev \
+            pkg-config \
+            cmake \
+            libgtk-3-dev \
+            libavcodec-dev \
+            libavformat-dev \
+            libswscale-dev \
+            libv4l-dev \
+            libxvidcore-dev \
+            libx264-dev \
+            libjpeg-dev \
+            libpng-dev \
+            libtiff-dev \
+            libatlas-base-dev \
+            gfortran \
+            wget \
+            unzip
+
+    - name: Build Pillow Layer
+      run: |
+        echo "🔥 Building Pillow Layer..."
+        
+        # Create build directory
+        mkdir -p pillow-build
+        cd pillow-build
+        
+        # Copy requirements
+        cp ../layers/pillow/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing pillow dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating pillow layer package..."
+        zip -r pillow.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h pillow.zip | cut -f1)
+        echo "🎯 PILLOW LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp pillow.zip s3://urgd-applicationdata/stitch/layers/pillow.zip --region us-west-2
+        
+        echo "🚀 PILLOW LAYER DEPLOYED TO S3!"
+
+    - name: Build Numpy Layer
+      run: |
+        echo "🔥 Building Numpy Layer..."
+        
+        # Create build directory
+        mkdir -p numpy-build
+        cd numpy-build
+        
+        # Copy requirements
+        cp ../layers/numpy/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing numpy dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating numpy layer package..."
+        zip -r numpy.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h numpy.zip | cut -f1)
+        echo "🎯 NUMPY LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp numpy.zip s3://urgd-applicationdata/stitch/layers/numpy.zip --region us-west-2
+        
+        echo "🚀 NUMPY LAYER DEPLOYED TO S3!"
+
+    - name: Build Opencv Layer
+      run: |
+        echo "🔥 Building Opencv Layer..."
+        
+        # Create build directory
+        mkdir -p opencv-build
+        cd opencv-build
+        
+        # Copy requirements
+        cp ../layers/opencv/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing opencv dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating opencv layer package..."
+        zip -r opencv.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h opencv.zip | cut -f1)
+        echo "🎯 OPENCV LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp opencv.zip s3://urgd-applicationdata/stitch/layers/opencv.zip --region us-west-2
+        
+        echo "🚀 OPENCV LAYER DEPLOYED TO S3!"
+
+    - name: Build Scipy Layer
+      run: |
+        echo "🔥 Building Scipy Layer..."
+        
+        # Create build directory
+        mkdir -p scipy-build
+        cd scipy-build
+        
+        # Copy requirements
+        cp ../layers/scipy/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing scipy dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating scipy layer package..."
+        zip -r scipy.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h scipy.zip | cut -f1)
+        echo "🎯 SCIPY LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp scipy.zip s3://urgd-applicationdata/stitch/layers/scipy.zip --region us-west-2
+        
+        echo "🚀 SCIPY LAYER DEPLOYED TO S3!"
+
+    - name: Build Svgpathtools Layer
+      run: |
+        echo "🔥 Building Svgpathtools Layer..."
+        
+        # Create build directory
+        mkdir -p svgpathtools-build
+        cd svgpathtools-build
+        
+        # Copy requirements
+        cp ../layers/svgpathtools/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing svgpathtools dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating svgpathtools layer package..."
+        zip -r svgpathtools.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h svgpathtools.zip | cut -f1)
+        echo "🎯 SVGPATHTOOLS LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp svgpathtools.zip s3://urgd-applicationdata/stitch/layers/svgpathtools.zip --region us-west-2
+        
+        echo "🚀 SVGPATHTOOLS LAYER DEPLOYED TO S3!"
+
+    - name: Build Svgpath Layer
+      run: |
+        echo "🔥 Building Svgpath Layer..."
+        
+        # Create build directory
+        mkdir -p svgpath-build
+        cd svgpath-build
+        
+        # Copy requirements
+        cp ../layers/svgpath/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing svgpath dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating svgpath layer package..."
+        zip -r svgpath.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h svgpath.zip | cut -f1)
+        echo "🎯 SVGPATH LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp svgpath.zip s3://urgd-applicationdata/stitch/layers/svgpath.zip --region us-west-2
+        
+        echo "🚀 SVGPATH LAYER DEPLOYED TO S3!"
+
+    - name: Build Pyembroidery Layer
+      run: |
+        echo "🔥 Building Pyembroidery Layer..."
+        
+        # Create build directory
+        mkdir -p pyembroidery-build
+        cd pyembroidery-build
+        
+        # Copy requirements
+        cp ../layers/pyembroidery/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing pyembroidery dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating pyembroidery layer package..."
+        zip -r pyembroidery.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h pyembroidery.zip | cut -f1)
+        echo "🎯 PYEMBROIDERY LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp pyembroidery.zip s3://urgd-applicationdata/stitch/layers/pyembroidery.zip --region us-west-2
+        
+        echo "🚀 PYEMBROIDERY LAYER DEPLOYED TO S3!"
+
+    - name: Build Multipart Layer
+      run: |
+        echo "🔥 Building Multipart Layer..."
+        
+        # Create build directory
+        mkdir -p multipart-build
+        cd multipart-build
+        
+        # Copy requirements
+        cp ../layers/multipart/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing multipart dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating multipart layer package..."
+        zip -r multipart.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h multipart.zip | cut -f1)
+        echo "🎯 MULTIPART LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp multipart.zip s3://urgd-applicationdata/stitch/layers/multipart.zip --region us-west-2
+        
+        echo "🚀 MULTIPART LAYER DEPLOYED TO S3!"
+
+    - name: Build Scikit-Image Layer
+      run: |
+        echo "🔥 Building Scikit-Image Layer..."
+        
+        # Create build directory
+        mkdir -p scikit-image-build
+        cd scikit-image-build
+        
+        # Copy requirements
+        cp ../layers/scikit-image/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing scikit-image dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating scikit-image layer package..."
+        zip -r scikit-image.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h scikit-image.zip | cut -f1)
+        echo "🎯 SCIKIT-IMAGE LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp scikit-image.zip s3://urgd-applicationdata/stitch/layers/scikit-image.zip --region us-west-2
+        
+        echo "🚀 SCIKIT-IMAGE LAYER DEPLOYED TO S3!"
+
+    - name: Build Imageio Layer
+      run: |
+        echo "🔥 Building Imageio Layer..."
+        
+        # Create build directory
+        mkdir -p imageio-build
+        cd imageio-build
+        
+        # Copy requirements
+        cp ../layers/imageio/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing imageio dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating imageio layer package..."
+        zip -r imageio.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h imageio.zip | cut -f1)
+        echo "🎯 IMAGEIO LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp imageio.zip s3://urgd-applicationdata/stitch/layers/imageio.zip --region us-west-2
+        
+        echo "🚀 IMAGEIO LAYER DEPLOYED TO S3!"
+
+    - name: Build Rawpy Layer
+      run: |
+        echo "🔥 Building Rawpy Layer..."
+        
+        # Create build directory
+        mkdir -p rawpy-build
+        cd rawpy-build
+        
+        # Copy requirements
+        cp ../layers/rawpy/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing rawpy dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating rawpy layer package..."
+        zip -r rawpy.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h rawpy.zip | cut -f1)
+        echo "🎯 RAWPY LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp rawpy.zip s3://urgd-applicationdata/stitch/layers/rawpy.zip --region us-west-2
+        
+        echo "🚀 RAWPY LAYER DEPLOYED TO S3!"
+
+    - name: Build Exifread Layer
+      run: |
+        echo "🔥 Building Exifread Layer..."
+        
+        # Create build directory
+        mkdir -p exifread-build
+        cd exifread-build
+        
+        # Copy requirements
+        cp ../layers/exifread/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing exifread dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating exifread layer package..."
+        zip -r exifread.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h exifread.zip | cut -f1)
+        echo "🎯 EXIFREAD LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp exifread.zip s3://urgd-applicationdata/stitch/layers/exifread.zip --region us-west-2
+        
+        echo "🚀 EXIFREAD LAYER DEPLOYED TO S3!"
+
+    - name: Build Pillow-Heif Layer
+      run: |
+        echo "🔥 Building Pillow-Heif Layer..."
+        
+        # Create build directory
+        mkdir -p pillow-heif-build
+        cd pillow-heif-build
+        
+        # Copy requirements
+        cp ../layers/pillow-heif/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing pillow-heif dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating pillow-heif layer package..."
+        zip -r pillow-heif.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h pillow-heif.zip | cut -f1)
+        echo "🎯 PILLOW-HEIF LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp pillow-heif.zip s3://urgd-applicationdata/stitch/layers/pillow-heif.zip --region us-west-2
+        
+        echo "🚀 PILLOW-HEIF LAYER DEPLOYED TO S3!"
+
+    - name: Build Scikit-Learn Layer
+      run: |
+        echo "🔥 Building Scikit-Learn Layer..."
+        
+        # Create build directory
+        mkdir -p scikit-learn-build
+        cd scikit-learn-build
+        
+        # Copy requirements
+        cp ../layers/scikit-learn/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing scikit-learn dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating scikit-learn layer package..."
+        zip -r scikit-learn.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h scikit-learn.zip | cut -f1)
+        echo "🎯 SCIKIT-LEARN LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp scikit-learn.zip s3://urgd-applicationdata/stitch/layers/scikit-learn.zip --region us-west-2
+        
+        echo "🚀 SCIKIT-LEARN LAYER DEPLOYED TO S3!"
+
+    - name: Build Numba Layer
+      run: |
+        echo "🔥 Building Numba Layer..."
+        
+        # Create build directory
+        mkdir -p numba-build
+        cd numba-build
+        
+        # Copy requirements
+        cp ../layers/numba/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing numba dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating numba layer package..."
+        zip -r numba.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h numba.zip | cut -f1)
+        echo "🎯 NUMBA LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp numba.zip s3://urgd-applicationdata/stitch/layers/numba.zip --region us-west-2
+        
+        echo "🚀 NUMBA LAYER DEPLOYED TO S3!"
+
+    - name: Build Joblib Layer
+      run: |
+        echo "🔥 Building Joblib Layer..."
+        
+        # Create build directory
+        mkdir -p joblib-build
+        cd joblib-build
+        
+        # Copy requirements
+        cp ../layers/joblib/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing joblib dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating joblib layer package..."
+        zip -r joblib.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h joblib.zip | cut -f1)
+        echo "🎯 JOBLIB LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp joblib.zip s3://urgd-applicationdata/stitch/layers/joblib.zip --region us-west-2
+        
+        echo "🚀 JOBLIB LAYER DEPLOYED TO S3!"
+
+    - name: Build Pandas Layer
+      run: |
+        echo "🔥 Building Pandas Layer..."
+        
+        # Create build directory
+        mkdir -p pandas-build
+        cd pandas-build
+        
+        # Copy requirements
+        cp ../layers/pandas/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing pandas dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating pandas layer package..."
+        zip -r pandas.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h pandas.zip | cut -f1)
+        echo "🎯 PANDAS LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp pandas.zip s3://urgd-applicationdata/stitch/layers/pandas.zip --region us-west-2
+        
+        echo "🚀 PANDAS LAYER DEPLOYED TO S3!"
+
+    - name: Build Matplotlib Layer
+      run: |
+        echo "🔥 Building Matplotlib Layer..."
+        
+        # Create build directory
+        mkdir -p matplotlib-build
+        cd matplotlib-build
+        
+        # Copy requirements
+        cp ../layers/matplotlib/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing matplotlib dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating matplotlib layer package..."
+        zip -r matplotlib.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h matplotlib.zip | cut -f1)
+        echo "🎯 MATPLOTLIB LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp matplotlib.zip s3://urgd-applicationdata/stitch/layers/matplotlib.zip --region us-west-2
+        
+        echo "🚀 MATPLOTLIB LAYER DEPLOYED TO S3!"
+
+    - name: Build Seaborn Layer
+      run: |
+        echo "🔥 Building Seaborn Layer..."
+        
+        # Create build directory
+        mkdir -p seaborn-build
+        cd seaborn-build
+        
+        # Copy requirements
+        cp ../layers/seaborn/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing seaborn dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating seaborn layer package..."
+        zip -r seaborn.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h seaborn.zip | cut -f1)
+        echo "🎯 SEABORN LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp seaborn.zip s3://urgd-applicationdata/stitch/layers/seaborn.zip --region us-west-2
+        
+        echo "🚀 SEABORN LAYER DEPLOYED TO S3!"
+
+    - name: Build Cairosvg Layer
+      run: |
+        echo "🔥 Building Cairosvg Layer..."
+        
+        # Create build directory
+        mkdir -p cairosvg-build
+        cd cairosvg-build
+        
+        # Copy requirements
+        cp ../layers/cairosvg/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing cairosvg dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating cairosvg layer package..."
+        zip -r cairosvg.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h cairosvg.zip | cut -f1)
+        echo "🎯 CAIROSVG LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp cairosvg.zip s3://urgd-applicationdata/stitch/layers/cairosvg.zip --region us-west-2
+        
+        echo "🚀 CAIROSVG LAYER DEPLOYED TO S3!"
+
+    - name: Build Svglib Layer
+      run: |
+        echo "🔥 Building Svglib Layer..."
+        
+        # Create build directory
+        mkdir -p svglib-build
+        cd svglib-build
+        
+        # Copy requirements
+        cp ../layers/svglib/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing svglib dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating svglib layer package..."
+        zip -r svglib.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h svglib.zip | cut -f1)
+        echo "🎯 SVGLIB LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp svglib.zip s3://urgd-applicationdata/stitch/layers/svglib.zip --region us-west-2
+        
+        echo "🚀 SVGLIB LAYER DEPLOYED TO S3!"
+
+    - name: Build Reportlab Layer
+      run: |
+        echo "🔥 Building Reportlab Layer..."
+        
+        # Create build directory
+        mkdir -p reportlab-build
+        cd reportlab-build
+        
+        # Copy requirements
+        cp ../layers/reportlab/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing reportlab dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating reportlab layer package..."
+        zip -r reportlab.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h reportlab.zip | cut -f1)
+        echo "🎯 REPORTLAB LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp reportlab.zip s3://urgd-applicationdata/stitch/layers/reportlab.zip --region us-west-2
+        
+        echo "🚀 REPORTLAB LAYER DEPLOYED TO S3!"
+
+
+    - name: Publish Pillow Layer
+      run: |
+        # Create Pillow layer
+        PILLOW_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-pillow-${{ github.event.inputs.environment }} \
+          --description "Pillow - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/pillow.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Pillow Layer ARN: $PILLOW_LAYER_ARN"
+        echo "PILLOW_LAYER_ARN=$PILLOW_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Numpy Layer
+      run: |
+        # Create Numpy layer
+        NUMPY_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-numpy-${{ github.event.inputs.environment }} \
+          --description "Numpy - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/numpy.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Numpy Layer ARN: $NUMPY_LAYER_ARN"
+        echo "NUMPY_LAYER_ARN=$NUMPY_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Opencv Layer
+      run: |
+        # Create Opencv layer
+        OPENCV_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-opencv-${{ github.event.inputs.environment }} \
+          --description "Opencv - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/opencv.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Opencv Layer ARN: $OPENCV_LAYER_ARN"
+        echo "OPENCV_LAYER_ARN=$OPENCV_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Scipy Layer
+      run: |
+        # Create Scipy layer
+        SCIPY_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-scipy-${{ github.event.inputs.environment }} \
+          --description "Scipy - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/scipy.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Scipy Layer ARN: $SCIPY_LAYER_ARN"
+        echo "SCIPY_LAYER_ARN=$SCIPY_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Svgpathtools Layer
+      run: |
+        # Create Svgpathtools layer
+        SVGPATHTOOLS_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-svgpathtools-${{ github.event.inputs.environment }} \
+          --description "Svgpathtools - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/svgpathtools.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Svgpathtools Layer ARN: $SVGPATHTOOLS_LAYER_ARN"
+        echo "SVGPATHTOOLS_LAYER_ARN=$SVGPATHTOOLS_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Svgpath Layer
+      run: |
+        # Create Svgpath layer
+        SVGPATH_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-svgpath-${{ github.event.inputs.environment }} \
+          --description "Svgpath - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/svgpath.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Svgpath Layer ARN: $SVGPATH_LAYER_ARN"
+        echo "SVGPATH_LAYER_ARN=$SVGPATH_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Pyembroidery Layer
+      run: |
+        # Create Pyembroidery layer
+        PYEMBROIDERY_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-pyembroidery-${{ github.event.inputs.environment }} \
+          --description "Pyembroidery - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/pyembroidery.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Pyembroidery Layer ARN: $PYEMBROIDERY_LAYER_ARN"
+        echo "PYEMBROIDERY_LAYER_ARN=$PYEMBROIDERY_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Multipart Layer
+      run: |
+        # Create Multipart layer
+        MULTIPART_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-multipart-${{ github.event.inputs.environment }} \
+          --description "Multipart - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/multipart.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Multipart Layer ARN: $MULTIPART_LAYER_ARN"
+        echo "MULTIPART_LAYER_ARN=$MULTIPART_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Scikit-Image Layer
+      run: |
+        # Create Scikit-Image layer
+        SCIKIT-IMAGE_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-scikit-image-${{ github.event.inputs.environment }} \
+          --description "Scikit-Image - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/scikit-image.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Scikit-Image Layer ARN: $SCIKIT-IMAGE_LAYER_ARN"
+        echo "SCIKIT-IMAGE_LAYER_ARN=$SCIKIT-IMAGE_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Imageio Layer
+      run: |
+        # Create Imageio layer
+        IMAGEIO_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-imageio-${{ github.event.inputs.environment }} \
+          --description "Imageio - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/imageio.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Imageio Layer ARN: $IMAGEIO_LAYER_ARN"
+        echo "IMAGEIO_LAYER_ARN=$IMAGEIO_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Rawpy Layer
+      run: |
+        # Create Rawpy layer
+        RAWPY_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-rawpy-${{ github.event.inputs.environment }} \
+          --description "Rawpy - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/rawpy.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Rawpy Layer ARN: $RAWPY_LAYER_ARN"
+        echo "RAWPY_LAYER_ARN=$RAWPY_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Exifread Layer
+      run: |
+        # Create Exifread layer
+        EXIFREAD_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-exifread-${{ github.event.inputs.environment }} \
+          --description "Exifread - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/exifread.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Exifread Layer ARN: $EXIFREAD_LAYER_ARN"
+        echo "EXIFREAD_LAYER_ARN=$EXIFREAD_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Pillow-Heif Layer
+      run: |
+        # Create Pillow-Heif layer
+        PILLOW-HEIF_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-pillow-heif-${{ github.event.inputs.environment }} \
+          --description "Pillow-Heif - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/pillow-heif.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Pillow-Heif Layer ARN: $PILLOW-HEIF_LAYER_ARN"
+        echo "PILLOW-HEIF_LAYER_ARN=$PILLOW-HEIF_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Scikit-Learn Layer
+      run: |
+        # Create Scikit-Learn layer
+        SCIKIT-LEARN_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-scikit-learn-${{ github.event.inputs.environment }} \
+          --description "Scikit-Learn - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/scikit-learn.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Scikit-Learn Layer ARN: $SCIKIT-LEARN_LAYER_ARN"
+        echo "SCIKIT-LEARN_LAYER_ARN=$SCIKIT-LEARN_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Numba Layer
+      run: |
+        # Create Numba layer
+        NUMBA_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-numba-${{ github.event.inputs.environment }} \
+          --description "Numba - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/numba.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Numba Layer ARN: $NUMBA_LAYER_ARN"
+        echo "NUMBA_LAYER_ARN=$NUMBA_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Joblib Layer
+      run: |
+        # Create Joblib layer
+        JOBLIB_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-joblib-${{ github.event.inputs.environment }} \
+          --description "Joblib - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/joblib.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Joblib Layer ARN: $JOBLIB_LAYER_ARN"
+        echo "JOBLIB_LAYER_ARN=$JOBLIB_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Pandas Layer
+      run: |
+        # Create Pandas layer
+        PANDAS_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-pandas-${{ github.event.inputs.environment }} \
+          --description "Pandas - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/pandas.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Pandas Layer ARN: $PANDAS_LAYER_ARN"
+        echo "PANDAS_LAYER_ARN=$PANDAS_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Matplotlib Layer
+      run: |
+        # Create Matplotlib layer
+        MATPLOTLIB_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-matplotlib-${{ github.event.inputs.environment }} \
+          --description "Matplotlib - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/matplotlib.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Matplotlib Layer ARN: $MATPLOTLIB_LAYER_ARN"
+        echo "MATPLOTLIB_LAYER_ARN=$MATPLOTLIB_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Seaborn Layer
+      run: |
+        # Create Seaborn layer
+        SEABORN_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-seaborn-${{ github.event.inputs.environment }} \
+          --description "Seaborn - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/seaborn.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Seaborn Layer ARN: $SEABORN_LAYER_ARN"
+        echo "SEABORN_LAYER_ARN=$SEABORN_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Cairosvg Layer
+      run: |
+        # Create Cairosvg layer
+        CAIROSVG_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-cairosvg-${{ github.event.inputs.environment }} \
+          --description "Cairosvg - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/cairosvg.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Cairosvg Layer ARN: $CAIROSVG_LAYER_ARN"
+        echo "CAIROSVG_LAYER_ARN=$CAIROSVG_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Svglib Layer
+      run: |
+        # Create Svglib layer
+        SVGLIB_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-svglib-${{ github.event.inputs.environment }} \
+          --description "Svglib - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/svglib.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Svglib Layer ARN: $SVGLIB_LAYER_ARN"
+        echo "SVGLIB_LAYER_ARN=$SVGLIB_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Reportlab Layer
+      run: |
+        # Create Reportlab layer
+        REPORTLAB_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-reportlab-${{ github.event.inputs.environment }} \
+          --description "Reportlab - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/reportlab.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Reportlab Layer ARN: $REPORTLAB_LAYER_ARN"
+        echo "REPORTLAB_LAYER_ARN=$REPORTLAB_LAYER_ARN" >> $GITHUB_ENV
+
+
+    - name: Output Layer Info
+      run: |
+        echo "🚀 ALL 21 LAMBDA LAYERS DEPLOYED!"
+        echo "💪 The ultimate Python arsenal is ready!"
+        echo "🔥 Each package gets its own layer - maximum modularity!"
+        echo "⚡ Ready to power your Lambda functions!"
+        echo ""
+        echo "📝 Layer ARNs:"
+        echo "  - ${PILLOW_LAYER_ARN}"
+        echo "  - ${NUMPY_LAYER_ARN}"
+        echo "  - ${OPENCV_LAYER_ARN}"
+        echo "  - ${SCIPY_LAYER_ARN}"
+        echo "  - ${SVGPATHTOOLS_LAYER_ARN}"
+        echo "  - ${SVGPATH_LAYER_ARN}"
+        echo "  - ${PYEMBROIDERY_LAYER_ARN}"
+        echo "  - ${MULTIPART_LAYER_ARN}"
+        echo "  - ${SCIKIT-IMAGE_LAYER_ARN}"
+        echo "  - ${IMAGEIO_LAYER_ARN}"
+        echo "  - ${RAWPY_LAYER_ARN}"
+        echo "  - ${EXIFREAD_LAYER_ARN}"
+        echo "  - ${PILLOW-HEIF_LAYER_ARN}"
+        echo "  - ${SCIKIT-LEARN_LAYER_ARN}"
+        echo "  - ${NUMBA_LAYER_ARN}"
+        echo "  - ${JOBLIB_LAYER_ARN}"
+        echo "  - ${PANDAS_LAYER_ARN}"
+        echo "  - ${MATPLOTLIB_LAYER_ARN}"
+        echo "  - ${SEABORN_LAYER_ARN}"
+        echo "  - ${CAIROSVG_LAYER_ARN}"
+        echo "  - ${SVGLIB_LAYER_ARN}"
+        echo "  - ${REPORTLAB_LAYER_ARN}"
