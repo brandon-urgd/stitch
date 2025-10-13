@@ -1,0 +1,35 @@
+# ULTIMATE BADASS LAMBDA LAYER DEPENDENCIES
+# The most powerful image processing and scientific computing stack ever built
+
+# Core Image Processing Powerhouse
+Pillow>=11.3.0                    # Latest image processing beast
+opencv-python>=4.10.0             # Computer vision powerhouse
+scikit-image>=0.24.0              # Advanced image analysis
+imageio>=2.36.0                   # Universal image I/O
+rawpy>=0.20.0                     # RAW camera file support
+exifread>=3.0.0                   # EXIF data extraction
+pillow-heif>=0.16.0               # HEIF/HEIC support
+
+# Scientific Computing Arsenal
+numpy>=2.3.3                      # Latest numerical computing
+scipy>=1.15.0                     # Scientific algorithms
+pandas>=2.2.0                     # Data manipulation beast
+scikit-learn>=1.6.0               # Machine learning
+matplotlib>=3.10.0                # Plotting and visualization
+seaborn>=0.13.0                   # Statistical visualization
+
+# Advanced SVG & Vector Processing
+svgpathtools>=1.7.1               # SVG path manipulation
+svg.path>=6.3                     # SVG path parsing
+cairosvg>=2.8.0                   # SVG to PNG/PDF conversion
+svglib>=1.6.0                     # SVG to other formats
+reportlab>=4.2.0                  # PDF generation
+
+# Performance & Optimization
+numba>=0.61.0                     # JIT compilation for speed
+cython>=3.1.0                     # C extensions
+joblib>=1.4.0                     # Parallel processing
+
+# Your existing dependencies (keeping them)
+pyembroidery>=1.5.1               # Embroidery file support
+python-multipart>=0.0.6           # Multipart form data

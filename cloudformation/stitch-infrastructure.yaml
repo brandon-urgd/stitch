@@ -152,6 +152,22 @@ Resources:
             Action: s3:GetObject
             Resource: !Sub 'arn:aws:s3:::${StitchWebsiteBucket}/*'
 
+  # Ultimate Badass Lambda Layer
+  UltimateDependenciesLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'ultimate-dependencies-${Environment}'
+      Description: "The most badass, high-powered Lambda layer ever built"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'layers/ultimate-dependencies.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
   # Lambda Function
   StitchSvgConverterFunction:
     Type: AWS::Lambda::Function
@@ -160,11 +176,14 @@ Resources:
       Runtime: python3.12
       Handler: svg_converter.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
+      Layers:
+        - !Ref UltimateDependenciesLayer
       Code:
         S3Bucket: 'urgd-applicationdata'
         S3Key: !Ref StitchFunctionCodeKey
-      MemorySize: 512
-      Timeout: 30
+      MemorySize: 1024
+      Timeout: 60
+      ReservedConcurrencyLimit: 10
       Environment:
         Variables:
           BUCKET_NAME: !Ref StitchStorageBucket

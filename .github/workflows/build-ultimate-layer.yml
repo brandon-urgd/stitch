@@ -1,0 +1,123 @@
+name: Build Ultimate Badass Lambda Layer
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'layers/**'
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force rebuild even if no changes'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-ultimate-layer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60  # Give it time to build the beast
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION || 'us-west-2' }}
+
+    - name: Install system dependencies (NUCLEAR OPTION)
+      run: |
+        echo "🚀 Installing EVERY system dependency known to man..."
+        sudo apt-get update
+        sudo apt-get install -y \
+          # Image processing powerhouses
+          libjpeg-dev libpng-dev libtiff-dev libwebp-dev \
+          libopenjp2-7-dev libopenjp2-7 \
+          libjpeg-turbo8-dev \
+          # Computer vision beast mode
+          libopencv-dev libopencv-contrib-dev \
+          libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+          # Scientific computing arsenal
+          libopenblas-dev liblapack-dev libatlas-base-dev \
+          libgfortran5 gfortran \
+          # Machine learning infrastructure
+          libhdf5-dev libhdf5-serial-dev \
+          libprotobuf-dev protobuf-compiler \
+          # Graphics and rendering
+          libcairo2-dev libpango1.0-dev libgdk-pixbuf2.0-dev \
+          libglib2.0-dev libgobject-2.0-dev \
+          # System libraries
+          libffi-dev libssl-dev libbz2-dev liblzma-dev \
+          libreadline-dev libsqlite3-dev libncurses5-dev \
+          # Build tools
+          build-essential cmake pkg-config \
+          # Everything else we might need
+          libxml2-dev libxslt1-dev \
+          libfreetype6-dev libfontconfig1-dev \
+          libx11-dev libxext-dev libxrender-dev
+
+    - name: Build Ultimate Layer
+      run: |
+        echo "🔥 Building the most badass Lambda layer ever..."
+        
+        # Create build directory
+        mkdir -p ultimate-layer-build
+        cd ultimate-layer-build
+        
+        # Copy requirements
+        cp ../layers/ultimate-dependencies/requirements.txt .
+        
+        # Install Python dependencies with MAXIMUM POWER
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing Python dependencies (this will take a while)..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the ultimate layer zip
+        echo "💥 Creating the ultimate layer package..."
+        zip -r ultimate-dependencies.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h ultimate-dependencies.zip | cut -f1)
+        echo "🎯 ULTIMATE LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp ultimate-dependencies.zip s3://urgd-applicationdata/layers/ultimate-dependencies.zip --region us-west-2
+        
+        echo "🚀 ULTIMATE LAYER DEPLOYED TO S3!"
+        echo "💪 Ready to process images like a BOSS!"
+
+    - name: Update Layer Version
+      run: |
+        # Create a new Lambda layer version
+        LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name ultimate-dependencies \
+          --description "The most badass, high-powered Lambda layer ever built" \
+          --content S3Bucket=urgd-applicationdata,S3Key=layers/ultimate-dependencies.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Layer ARN: $LAYER_ARN"
+        echo "LAYER_ARN=$LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Output Layer Info
+      run: |
+        echo "🚀 ULTIMATE LAMBDA LAYER DEPLOYED!"
+        echo "💪 Layer ARN: $LAYER_ARN"
+        echo "🔥 Ready to power your Lambda functions!"
+        echo "⚡ This layer contains the most powerful image processing tools ever assembled!"

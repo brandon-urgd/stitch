@@ -1,10 +1,7 @@
+# Basic dependencies only - heavy stuff is in the ultimate layer!
 boto3>=1.40.0,<2.0.0
-pyembroidery>=1.5.1,<2.0.0
-Pillow>=9.0.0
-svgpathtools>=1.7.1,<2.0.0
-svg.path>=6.3,<7.0.0
 python-multipart>=0.0.6,<1.0.0
-# svgpathtools dependencies
-numpy>=1.21.0
-scipy>=1.7.0
-svgwrite>=1.4.0
+
+# Note: All the heavy dependencies (Pillow, OpenCV, scipy, numpy, etc.)
+# are now provided by the Ultimate Badass Lambda Layer!
+# This makes deployments MUCH faster! 🚀
