@@ -65,3 +65,8 @@ layer.zip
 *cfn-lint-results*
 response.json
 *.log
+
+# Temporary analysis and test files
+analyze_*.py
+payload.b64
+*.dist-info/
