@@ -102,6 +102,23 @@ jobs:
       with:
         python-version: '3.12'
         
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libopenblas-dev \
+          liblapack-dev \
+          gfortran \
+          libjpeg-dev \
+          zlib1g-dev \
+          libpng-dev \
+          libtiff-dev \
+          libfreetype6-dev \
+          liblcms2-dev \
+          libwebp-dev \
+          tcl-dev \
+          tk-dev
+        
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
