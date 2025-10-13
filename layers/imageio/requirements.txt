@@ -1,2 +1,0 @@
-# IMAGEIO LAYER (Universal image I/O)
-imageio>=2.36.0

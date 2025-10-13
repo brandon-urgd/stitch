@@ -1,4 +1,4 @@
-name: Build Ultimate 21-Layer Lambda Arsenal
+name: Build Ultimate 5-Layer Lambda Arsenal
 
 on:
   workflow_dispatch:
@@ -80,12 +80,12 @@ jobs:
             wget \
             unzip
 
-      - name: Build All 21 Layers
+      - name: Build All 5 Layers
         run: |
-          echo "🔥 Building all 21 individual Lambda layers..."
+          echo "🔥 Building all 5 focused Lambda layers..."
           
           # List of all layers
-          layers=("pillow" "numpy" "opencv" "scipy" "svgpathtools" "svgpath" "pyembroidery" "multipart" "scikit-image" "imageio" "rawpy" "exifread" "pillow-heif" "scikit-learn" "numba" "joblib" "pandas" "matplotlib" "seaborn" "cairosvg" "svglib" "reportlab")
+          layers=("core-image" "computer-vision" "svg-embroidery" "file-io" "output-formats")
           
           # Build each layer
           for layer in "${layers[@]}"; do
@@ -120,12 +120,12 @@ jobs:
             cd ..
           done
 
-      - name: Publish All 21 Layers
+      - name: Publish All 5 Layers
         run: |
-          echo "🔥 Publishing all 21 Lambda layers..."
+          echo "🔥 Publishing all 5 Lambda layers..."
           
           # List of all layers
-          layers=("pillow" "numpy" "opencv" "scipy" "svgpathtools" "svgpath" "pyembroidery" "multipart" "scikit-image" "imageio" "rawpy" "exifread" "pillow-heif" "scikit-learn" "numba" "joblib" "pandas" "matplotlib" "seaborn" "cairosvg" "svglib" "reportlab")
+          layers=("core-image" "computer-vision" "svg-embroidery" "file-io" "output-formats")
           
           # Publish each layer
           for layer in "${layers[@]}"; do
@@ -148,31 +148,14 @@ jobs:
 
       - name: Output Layer Info
         run: |
-          echo "🚀 ALL 21 LAMBDA LAYERS DEPLOYED!"
-          echo "💪 The ultimate Python arsenal is ready!"
-          echo "🔥 Each package gets its own layer - maximum modularity!"
+          echo "🚀 ALL 5 LAMBDA LAYERS DEPLOYED!"
+          echo "💪 The ultimate focused Python arsenal is ready!"
+          echo "🔥 5 focused layers - maximum efficiency!"
           echo "⚡ Ready to power your Lambda functions!"
           echo ""
           echo "📝 Layer ARNs:"
-          echo "  - $PILLOW_LAYER_ARN"
-          echo "  - $NUMPY_LAYER_ARN"
-          echo "  - $OPENCV_LAYER_ARN"
-          echo "  - $SCIPY_LAYER_ARN"
-          echo "  - $SVGPATHTOOLS_LAYER_ARN"
-          echo "  - $SVGPATH_LAYER_ARN"
-          echo "  - $PYEMBROIDERY_LAYER_ARN"
-          echo "  - $MULTIPART_LAYER_ARN"
-          echo "  - $SCIKIT_IMAGE_LAYER_ARN"
-          echo "  - $IMAGEIO_LAYER_ARN"
-          echo "  - $RAWPY_LAYER_ARN"
-          echo "  - $EXIFREAD_LAYER_ARN"
-          echo "  - $PILLOW_HEIF_LAYER_ARN"
-          echo "  - $SCIKIT_LEARN_LAYER_ARN"
-          echo "  - $NUMBA_LAYER_ARN"
-          echo "  - $JOBLIB_LAYER_ARN"
-          echo "  - $PANDAS_LAYER_ARN"
-          echo "  - $MATPLOTLIB_LAYER_ARN"
-          echo "  - $SEABORN_LAYER_ARN"
-          echo "  - $CAIROSVG_LAYER_ARN"
-          echo "  - $SVGLIB_LAYER_ARN"
-          echo "  - $REPORTLAB_LAYER_ARN"
+          echo "  - $CORE_IMAGE_LAYER_ARN"
+          echo "  - $COMPUTER_VISION_LAYER_ARN"
+          echo "  - $SVG_EMBROIDERY_LAYER_ARN"
+          echo "  - $FILE_IO_LAYER_ARN"
+          echo "  - $OUTPUT_FORMATS_LAYER_ARN"

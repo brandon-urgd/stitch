@@ -1,2 +1,0 @@
-# NUMPY LAYER (Numerical computing foundation)
-numpy>=2.3.3

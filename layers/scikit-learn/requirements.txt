@@ -1,2 +1,0 @@
-# SCIKIT-LEARN LAYER (Machine learning)
-scikit-learn>=1.6.0

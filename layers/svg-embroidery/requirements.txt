@@ -1,0 +1,9 @@
+# SVG & EMBROIDERY LAYER
+# SVG processing and embroidery file generation
+
+# SVG & Vector Processing
+svgpathtools>=1.7.1               # SVG path manipulation
+svg.path>=6.3                     # SVG path parsing
+
+# Embroidery Support
+pyembroidery>=1.5.1               # Embroidery file support

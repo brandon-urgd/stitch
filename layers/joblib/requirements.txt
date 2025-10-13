@@ -1,2 +1,0 @@
-# JOBLIB LAYER (Parallel processing)
-joblib>=1.4.0

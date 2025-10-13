@@ -1,2 +1,0 @@
-# SVGPATH LAYER (SVG path parsing)
-svg.path>=6.3

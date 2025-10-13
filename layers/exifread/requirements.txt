@@ -1,2 +1,0 @@
-# EXIFREAD LAYER (EXIF data extraction)
-exifread>=3.0.0

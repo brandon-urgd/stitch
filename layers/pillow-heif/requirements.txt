@@ -1,2 +1,0 @@
-# PILLOW-HEIF LAYER (HEIF/HEIC support)
-pillow-heif>=0.16.0

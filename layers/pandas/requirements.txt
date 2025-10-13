@@ -1,2 +1,0 @@
-# PANDAS LAYER (Data manipulation beast)
-pandas>=2.2.0

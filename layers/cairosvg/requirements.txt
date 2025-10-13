@@ -1,2 +1,0 @@
-# CAIROSVG LAYER (SVG to PNG/PDF conversion)
-cairosvg>=2.8.0

@@ -1,2 +1,0 @@
-# SEABORN LAYER (Statistical visualization)
-seaborn>=0.13.0
