@@ -157,8 +157,6 @@ jobs:
 
       - name: Publish Essential Layer
         run: |
-          echo "🔥 Publishing essential Lambda layer..."
-          
           # List of all layers
           layers=("svg-embroidery")
           
