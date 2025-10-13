@@ -157,7 +157,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: !Sub 'urgd-stitch-svg-converter-${Environment}-${GitCommit}'
-      Runtime: python3.11
+      Runtime: python3.13
       Handler: svg_converter.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
