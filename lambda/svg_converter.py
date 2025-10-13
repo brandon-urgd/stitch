@@ -296,36 +296,58 @@ def parse_basic_path(path_data: str) -> List[Tuple[float, float]]:
     coords = []
     
     try:
-        # Clean up path data - remove Z commands and other non-coordinate elements
+        # Clean up path data
         path_data = path_data.strip()
         
-        # Remove Z commands and other non-coordinate elements
-        path_data = re.sub(r'[Zz]', '', path_data)
-        path_data = re.sub(r'[MLHVCSQTA]', ' ', path_data)
+        # Remove all SVG path commands and keep only numbers and separators
+        # This regex removes M, L, H, V, C, S, Q, T, A, Z commands and their case variations
+        path_data = re.sub(r'[MLHVCSQTAZmlhvcsqtaz]', ' ', path_data)
         
-        # Find all coordinate pairs using regex
-        coord_pattern = r'([+-]?\d*\.?\d+),([+-]?\d*\.?\d+)'
-        matches = re.findall(coord_pattern, path_data)
+        # Split by common separators and extract numbers
+        # Split by commas, spaces, and other separators
+        tokens = re.split(r'[, \s]+', path_data)
         
-        for x_str, y_str in matches:
+        # Extract coordinate pairs
+        i = 0
+        while i < len(tokens) - 1:
             try:
+                # Try to parse two consecutive tokens as x, y coordinates
+                x_str = tokens[i].strip()
+                y_str = tokens[i + 1].strip()
+                
+                # Skip empty tokens
+                if not x_str or not y_str:
+                    i += 1
+                    continue
+                
                 x = float(x_str)
                 y = float(y_str)
-                coords.append((x, y))
-            except ValueError:
-                continue
-        
-        # If no comma-separated pairs found, try space-separated
-        if not coords:
-            coord_pattern = r'([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)'
-            matches = re.findall(coord_pattern, path_data)
-            
-            for x_str, y_str in matches:
-                try:
-                    x = float(x_str)
-                    y = float(y_str)
+                
+                # Validate coordinates are reasonable (not too large or small)
+                if -10000 < x < 10000 and -10000 < y < 10000:
                     coords.append((x, y))
-                except ValueError:
+                    i += 2  # Skip both tokens
+                else:
+                    i += 1  # Skip just the first token
+                    
+            except (ValueError, IndexError):
+                i += 1  # Skip invalid tokens
+        
+        # If we didn't get many coordinates, try a more aggressive approach
+        if len(coords) < 10:
+            # Extract all numbers from the path
+            numbers = re.findall(r'[+-]?\d*\.?\d+', path_data)
+            
+            # Pair them up as coordinates
+            for i in range(0, len(numbers) - 1, 2):
+                try:
+                    x = float(numbers[i])
+                    y = float(numbers[i + 1])
+                    
+                    # Validate coordinates
+                    if -10000 < x < 10000 and -10000 < y < 10000:
+                        coords.append((x, y))
+                except (ValueError, IndexError):
                     continue
         
         return coords
@@ -333,8 +355,6 @@ def parse_basic_path(path_data: str) -> List[Tuple[float, float]]:
     except Exception as e:
         print(f"Error in basic path parsing: {e}")
         return []
-    
-    return coords
 
 def scale_coordinates(coords: List[Tuple[float, float]], svg_width: float, svg_height: float, target_width: float = 100) -> List[Tuple[float, float]]:
     """Scale SVG coordinates to embroidery millimeters."""
