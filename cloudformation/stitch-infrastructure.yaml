@@ -156,7 +156,7 @@ Resources:
   UltimateDependenciesLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'ultimate-dependencies-${Environment}'
+      LayerName: !Sub 'urgd-ultimate-dependencies-${Environment}'
       Description: "The most badass, high-powered Lambda layer ever built"
       Content:
         S3Bucket: 'urgd-applicationdata'
