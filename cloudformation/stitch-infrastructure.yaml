@@ -152,15 +152,31 @@ Resources:
             Action: s3:GetObject
             Resource: !Sub 'arn:aws:s3:::${StitchWebsiteBucket}/*'
 
-  # Ultimate Badass Lambda Layer
-  UltimateDependenciesLayer:
+  # Image Processing Lambda Layer
+  ImageProcessingLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-ultimate-dependencies-${Environment}'
-      Description: "The most badass, high-powered Lambda layer ever built"
+      LayerName: !Sub 'urgd-image-processing-${Environment}'
+      Description: "Image processing and SVG tools for stitch conversion"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/ultimate-dependencies.zip'
+        S3Key: 'stitch/layers/image-processing.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Scientific Computing Lambda Layer
+  ScientificComputingLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-scientific-computing-${Environment}'
+      Description: "Scientific computing and ML tools"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/scientific-computing.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -177,7 +193,8 @@ Resources:
       Handler: svg_converter.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Layers:
-        - !Ref UltimateDependenciesLayer
+        - !Ref ImageProcessingLayer
+        - !Ref ScientificComputingLayer
       Code:
         S3Bucket: 'urgd-applicationdata'
         S3Key: !Ref StitchFunctionCodeKey

@@ -1,0 +1,16 @@
+# IMAGE PROCESSING LAYER
+# Core image processing and computer vision (under 250MB)
+
+# Essential Image Processing
+Pillow>=11.3.0                    # Image processing beast
+opencv-python>=4.10.0             # Computer vision powerhouse
+numpy>=2.3.3                      # Numerical computing foundation
+scipy>=1.15.0                     # Scientific algorithms
+
+# SVG & Vector Processing
+svgpathtools>=1.7.1               # SVG path manipulation
+svg.path>=6.3                     # SVG path parsing
+
+# Your existing dependencies
+pyembroidery>=1.5.1               # Embroidery file support
+python-multipart>=0.0.6           # Multipart form data

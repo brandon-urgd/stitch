@@ -89,63 +89,105 @@ jobs:
           tcl-dev \
           tk-dev
 
-    - name: Build Ultimate Badass Lambda Layer
+    - name: Build Image Processing Layer
       run: |
-        echo "🔥 Building the most badass Lambda layer ever..."
+        echo "🔥 Building Image Processing Layer..."
         
         # Create build directory
-        mkdir -p ultimate-layer-build
-        cd ultimate-layer-build
+        mkdir -p image-layer-build
+        cd image-layer-build
         
         # Copy requirements
-        cp ../layers/ultimate-dependencies/requirements.txt .
+        cp ../layers/image-processing/requirements.txt .
         
-        # Install Python dependencies with MAXIMUM POWER
+        # Install Python dependencies
         pip install --upgrade pip setuptools wheel
-        echo "⚡ Installing Python dependencies (this will take a while)..."
+        echo "⚡ Installing image processing dependencies..."
         pip install -r requirements.txt -t ./python/ --no-cache-dir
         
-        # Create the ultimate layer zip
-        echo "💥 Creating the ultimate layer package..."
-        zip -r ultimate-dependencies.zip python/
+        # Create the layer zip
+        echo "💥 Creating image processing layer package..."
+        zip -r image-processing.zip python/
         
         # Get the size
-        LAYER_SIZE=$(du -h ultimate-dependencies.zip | cut -f1)
-        echo "🎯 ULTIMATE LAYER BUILT! Size: $LAYER_SIZE"
+        LAYER_SIZE=$(du -h image-processing.zip | cut -f1)
+        echo "🎯 IMAGE PROCESSING LAYER BUILT! Size: $LAYER_SIZE"
         
         # Upload to S3
-        aws s3 cp ultimate-dependencies.zip s3://urgd-applicationdata/stitch/layers/ultimate-dependencies.zip --region us-west-2
+        aws s3 cp image-processing.zip s3://urgd-applicationdata/stitch/layers/image-processing.zip --region us-west-2
         
-        echo "🚀 ULTIMATE LAYER DEPLOYED TO S3!"
-        echo "💪 Ready to process images like a BOSS!"
+        echo "🚀 IMAGE PROCESSING LAYER DEPLOYED TO S3!"
 
-    - name: Publish Ultimate Layer
+    - name: Build Scientific Computing Layer
       run: |
-        # Create a new Lambda layer version
-        LAYER_ARN=$(aws lambda publish-layer-version \
-          --layer-name urgd-ultimate-dependencies-${{ github.event.inputs.environment }} \
-          --description "The most badass, high-powered Lambda layer ever built - ${{ github.event.inputs.environment }}" \
-          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/ultimate-dependencies.zip \
+        echo "🔥 Building Scientific Computing Layer..."
+        
+        # Create build directory
+        mkdir -p scientific-layer-build
+        cd scientific-layer-build
+        
+        # Copy requirements
+        cp ../layers/scientific-computing/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing scientific computing dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating scientific computing layer package..."
+        zip -r scientific-computing.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h scientific-computing.zip | cut -f1)
+        echo "🎯 SCIENTIFIC COMPUTING LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp scientific-computing.zip s3://urgd-applicationdata/stitch/layers/scientific-computing.zip --region us-west-2
+        
+        echo "🚀 SCIENTIFIC COMPUTING LAYER DEPLOYED TO S3!"
+
+    - name: Publish Image Processing Layer
+      run: |
+        # Create Image Processing layer
+        IMAGE_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-image-processing-${{ github.event.inputs.environment }} \
+          --description "Image processing and SVG tools - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/image-processing.zip \
           --compatible-runtimes python3.12 \
           --compatible-architectures x86_64 \
           --query 'LayerVersionArn' \
           --output text \
           --region us-west-2)
         
-        echo "🎯 Layer ARN: $LAYER_ARN"
-        echo "LAYER_ARN=$LAYER_ARN" >> $GITHUB_ENV
-        echo "🚀 ULTIMATE LAMBDA LAYER DEPLOYED!"
-        echo "💪 Layer ARN: $LAYER_ARN"
-        echo "🔥 Ready to power your Lambda functions!"
-        echo "⚡ This layer contains the most powerful image processing tools ever assembled!"
+        echo "🎯 Image Processing Layer ARN: $IMAGE_LAYER_ARN"
+        echo "IMAGE_LAYER_ARN=$IMAGE_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Scientific Computing Layer
+      run: |
+        # Create Scientific Computing layer
+        SCIENTIFIC_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-scientific-computing-${{ github.event.inputs.environment }} \
+          --description "Scientific computing and ML tools - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/scientific-computing.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Scientific Computing Layer ARN: $SCIENTIFIC_LAYER_ARN"
+        echo "SCIENTIFIC_LAYER_ARN=$SCIENTIFIC_LAYER_ARN" >> $GITHUB_ENV
 
     - name: Output Layer Info
       run: |
-        echo "🚀 ULTIMATE LAMBDA LAYER DEPLOYED!"
-        echo "💪 Layer ARN: $LAYER_ARN"
+        echo "🚀 BOTH LAMBDA LAYERS DEPLOYED!"
+        echo "💪 Image Processing Layer ARN: $IMAGE_LAYER_ARN"
+        echo "💪 Scientific Computing Layer ARN: $SCIENTIFIC_LAYER_ARN"
         echo "🔥 Ready to power your Lambda functions!"
-        echo "⚡ This layer contains the most powerful image processing tools ever assembled!"
+        echo "⚡ Split into focused layers for maximum efficiency!"
         echo ""
-        echo "📝 To use this layer in your Lambda functions:"
+        echo "📝 To use these layers in your Lambda functions:"
         echo "   Layers:"
-        echo "     - $LAYER_ARN"
+        echo "     - $IMAGE_LAYER_ARN"
+        echo "     - $SCIENTIFIC_LAYER_ARN"
