@@ -195,8 +195,8 @@ jobs:
         
         # Install dependencies using pip
         cd "$BUILD_DIR"
-        pip install -r requirements.txt -t . --platform linux_x86_64 --only-binary=:all: --no-deps
-        pip install -r requirements.txt -t . --platform linux_x86_64 --only-binary=:all:
+        pip install -r requirements.txt -t . --platform linux_x86_64 --no-deps
+        pip install -r requirements.txt -t . --platform linux_x86_64
         cd - > /dev/null
         
         # Create zip file from build directory
