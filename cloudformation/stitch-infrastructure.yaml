@@ -152,22 +152,6 @@ Resources:
             Action: s3:GetObject
             Resource: !Sub 'arn:aws:s3:::${StitchWebsiteBucket}/*'
 
-  # Core Image Lambda Layer
-  CoreImageLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      LayerName: !Sub 'urgd-core-image-${Environment}'
-      Description: !Sub "Core image processing and numerical computing - ${Environment}"
-      Content:
-        S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/core-image.zip'
-      CompatibleRuntimes:
-        - python3.12
-      CompatibleArchitectures:
-        - x86_64
-      LicenseInfo: "MIT"
-
-
   # SVG & Embroidery Lambda Layer
   SvgEmbroideryLayer:
     Type: AWS::Lambda::LayerVersion
@@ -192,7 +176,6 @@ Resources:
       Handler: svg_converter.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
       Layers:
-        - !Ref CoreImageLayer
         - !Ref SvgEmbroideryLayer
       Code:
         S3Bucket: 'urgd-applicationdata'

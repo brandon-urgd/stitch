@@ -90,12 +90,12 @@ jobs:
           
           echo "✅ S3 folder structure created"
 
-      - name: Build 2 Essential Layers
+      - name: Build Essential Layer
         run: |
-          echo "🔥 Building 2 essential Lambda layers..."
+          echo "🔥 Building essential Lambda layer..."
           
           # List of all layers
-          layers=("core-image" "svg-embroidery")
+          layers=("svg-embroidery")
           
           # Build each layer
           for layer in "${layers[@]}"; do
@@ -106,23 +106,48 @@ jobs:
             cd ${layer}-build
             
             # Copy requirements
+            echo "📋 Copying requirements for $layer..."
             cp ../layers/${layer}/requirements.txt .
             
-            # Install Python dependencies
-            pip install --upgrade pip setuptools wheel
+            # Install Python dependencies with error handling
             echo "⚡ Installing $layer dependencies..."
-            pip install -r requirements.txt -t ./python/ --no-cache-dir
+            if ! pip install --upgrade pip setuptools wheel; then
+              echo "❌ Failed to upgrade pip/setuptools/wheel for $layer"
+              exit 1
+            fi
+            
+            if ! pip install -r requirements.txt -t ./python/ --no-cache-dir; then
+              echo "❌ Failed to install $layer dependencies"
+              echo "📋 Requirements that failed:"
+              cat requirements.txt
+              exit 1
+            fi
             
             # Create the layer zip
             echo "💥 Creating $layer layer package..."
-            zip -r ${layer}.zip python/
+            if ! zip -r ${layer}.zip python/; then
+              echo "❌ Failed to create zip for $layer"
+              exit 1
+            fi
             
             # Get the size
             LAYER_SIZE=$(du -h ${layer}.zip | cut -f1)
             echo "🎯 ${layer^^} LAYER BUILT! Size: $LAYER_SIZE"
             
+            # Check if layer is too big
+            LAYER_SIZE_BYTES=$(du -b ${layer}.zip | cut -f1)
+            MAX_SIZE=262144000  # 250MB in bytes
+            if [ $LAYER_SIZE_BYTES -gt $MAX_SIZE ]; then
+              echo "❌ Layer $layer is too big: $LAYER_SIZE_BYTES bytes (max: $MAX_SIZE)"
+              exit 1
+            fi
+            
             # Upload to S3
-            aws s3 cp ${layer}.zip s3://urgd-applicationdata/stitch/layers/${layer}.zip --region us-west-2
+            echo "📤 Uploading $layer to S3..."
+            if ! aws s3 cp ${layer}.zip s3://urgd-applicationdata/stitch/layers/${layer}.zip --region us-west-2; then
+              echo "❌ Failed to upload $layer to S3"
+              exit 1
+            fi
             
             echo "🚀 ${layer^^} LAYER DEPLOYED TO S3!"
             
@@ -130,12 +155,12 @@ jobs:
             cd ..
           done
 
-      - name: Publish 2 Essential Layers
+      - name: Publish Essential Layer
         run: |
-          echo "🔥 Publishing 2 essential Lambda layers..."
+          echo "🔥 Publishing essential Lambda layer..."
           
           # List of all layers
-          layers=("core-image" "svg-embroidery")
+          layers=("svg-embroidery")
           
           # Publish each layer
           for layer in "${layers[@]}"; do
@@ -158,11 +183,10 @@ jobs:
 
       - name: Output Layer Info
         run: |
-          echo "🚀 2 ESSENTIAL LAMBDA LAYERS DEPLOYED!"
-          echo "💪 Minimal focused Python layers ready!"
-          echo "🔥 2 layers - under 250MB limit!"
+          echo "🚀 ESSENTIAL LAMBDA LAYER DEPLOYED!"
+          echo "💪 SVG & Embroidery layer ready!"
+          echo "🔥 1 layer - well under 250MB limit!"
           echo "⚡ Ready to power your Lambda functions!"
           echo ""
-          echo "📝 Layer ARNs:"
-          echo "  - $CORE_IMAGE_LAYER_ARN"
+          echo "📝 Layer ARN:"
           echo "  - $SVG_EMBROIDERY_LAYER_ARN"
