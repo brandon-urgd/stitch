@@ -315,7 +315,7 @@ Resources:
       DomainName: !Ref StitchApiGatewayDomainName
       RestApiId: !Ref StitchApiGateway
       Stage: !Ref Environment
-      BasePath: !If [IsProdEnvironment, '', !Ref Environment]
+      BasePath: ''
 
   # Route 53 Record for API Gateway
   StitchApiGatewayDnsRecord:
