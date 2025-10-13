@@ -157,7 +157,7 @@ Resources:
     Type: AWS::Lambda::LayerVersion
     Properties:
       LayerName: !Sub 'urgd-core-image-${Environment}'
-      Description: "Core image processing and numerical computing - ${Environment}"
+      Description: !Sub "Core image processing and numerical computing - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
         S3Key: 'stitch/layers/core-image.zip'
@@ -166,14 +166,13 @@ Resources:
       CompatibleArchitectures:
         - x86_64
       LicenseInfo: "MIT"
-      RetentionPolicy: Retain
 
   # Computer Vision Lambda Layer
   ComputerVisionLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
       LayerName: !Sub 'urgd-computer-vision-${Environment}'
-      Description: "Computer vision and scientific computing - ${Environment}"
+      Description: !Sub "Computer vision and scientific computing - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
         S3Key: 'stitch/layers/computer-vision.zip'
@@ -182,14 +181,13 @@ Resources:
       CompatibleArchitectures:
         - x86_64
       LicenseInfo: "MIT"
-      RetentionPolicy: Retain
 
   # SVG & Embroidery Lambda Layer
   SvgEmbroideryLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
       LayerName: !Sub 'urgd-svg-embroidery-${Environment}'
-      Description: "SVG processing and embroidery file generation - ${Environment}"
+      Description: !Sub "SVG processing and embroidery file generation - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
         S3Key: 'stitch/layers/svg-embroidery.zip'
@@ -198,14 +196,13 @@ Resources:
       CompatibleArchitectures:
         - x86_64
       LicenseInfo: "MIT"
-      RetentionPolicy: Retain
 
   # File I/O Lambda Layer
   FileIOLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
       LayerName: !Sub 'urgd-file-io-${Environment}'
-      Description: "Universal file input/output and metadata - ${Environment}"
+      Description: !Sub "Universal file input/output and metadata - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
         S3Key: 'stitch/layers/file-io.zip'
@@ -214,14 +211,13 @@ Resources:
       CompatibleArchitectures:
         - x86_64
       LicenseInfo: "MIT"
-      RetentionPolicy: Retain
 
   # Output Formats Lambda Layer
   OutputFormatsLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
       LayerName: !Sub 'urgd-output-formats-${Environment}'
-      Description: "Multiple output format generation - ${Environment}"
+      Description: !Sub "Multiple output format generation - ${Environment}"
       Content:
         S3Bucket: 'urgd-applicationdata'
         S3Key: 'stitch/layers/output-formats.zip'
@@ -230,7 +226,6 @@ Resources:
       CompatibleArchitectures:
         - x86_64
       LicenseInfo: "MIT"
-      RetentionPolicy: Retain
 
   # Lambda Function
   StitchSvgConverterFunction:
@@ -251,7 +246,6 @@ Resources:
         S3Key: !Ref StitchFunctionCodeKey
       MemorySize: 1024
       Timeout: 60
-      ReservedConcurrencyLimit: 10
       Environment:
         Variables:
           BUCKET_NAME: !Ref StitchStorageBucket
