@@ -120,12 +120,29 @@ jobs:
             cd ..
           done
 
-      - name: Publish All 4 Layers
+      - name: Upload Layers to S3
         run: |
-          echo "🔥 Publishing all 4 Lambda layers..."
+          echo "📤 Uploading layers to S3..."
           
           # List of all layers
-          layers=("core-image" "svg-embroidery" "file-io" "output-formats")
+          layers=("core-image" "svg-embroidery")
+          
+          # Upload each layer to S3
+          for layer in "${layers[@]}"; do
+            echo "📤 Uploading $layer layer to S3..."
+            
+            # Upload to S3
+            aws s3 cp ${layer}.zip s3://urgd-applicationdata/stitch/layers/${layer}.zip --region us-west-2
+            
+            echo "✅ $layer layer uploaded to S3"
+          done
+
+      - name: Publish 2 Essential Layers
+        run: |
+          echo "🔥 Publishing 2 essential Lambda layers..."
+          
+          # List of all layers
+          layers=("core-image" "svg-embroidery")
           
           # Publish each layer
           for layer in "${layers[@]}"; do
