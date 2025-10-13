@@ -46,7 +46,7 @@ If you prefer to deploy manually:
    # Create Lambda function
    aws lambda create-function \
      --function-name urgd-stitch \
-     --runtime python3.13 \
+     --runtime python3.12 \
      --role arn:aws:iam::YOUR_ACCOUNT_ID:role/lambda-execution-role \
      --handler svg_converter.lambda_handler \
      --zip-file fileb://lambda/svg_converter.zip
