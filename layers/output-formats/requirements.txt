@@ -1,9 +1,0 @@
-# OUTPUT FORMATS LAYER
-# Multiple output format generation
-
-# SVG Conversion
-cairosvg>=2.8.0                   # SVG to PNG/PDF conversion
-svglib>=1.6.0                     # SVG to other formats
-
-# Document Generation
-reportlab>=4.2.0                  # PDF generation

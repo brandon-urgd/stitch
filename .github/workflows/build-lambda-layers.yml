@@ -80,12 +80,12 @@ jobs:
             wget \
             unzip
 
-      - name: Build All 4 Layers
+      - name: Build 2 Essential Layers
         run: |
-          echo "🔥 Building all 4 focused Lambda layers..."
+          echo "🔥 Building 2 essential Lambda layers..."
           
           # List of all layers
-          layers=("core-image" "svg-embroidery" "file-io" "output-formats")
+          layers=("core-image" "svg-embroidery")
           
           # Build each layer
           for layer in "${layers[@]}"; do
@@ -148,13 +148,11 @@ jobs:
 
       - name: Output Layer Info
         run: |
-          echo "🚀 ALL 4 LAMBDA LAYERS DEPLOYED!"
-          echo "💪 The ultimate focused Python arsenal is ready!"
-          echo "🔥 4 focused layers - maximum efficiency!"
+          echo "🚀 2 ESSENTIAL LAMBDA LAYERS DEPLOYED!"
+          echo "💪 Minimal focused Python layers ready!"
+          echo "🔥 2 layers - under 250MB limit!"
           echo "⚡ Ready to power your Lambda functions!"
           echo ""
           echo "📝 Layer ARNs:"
           echo "  - $CORE_IMAGE_LAYER_ARN"
           echo "  - $SVG_EMBROIDERY_LAYER_ARN"
-          echo "  - $FILE_IO_LAYER_ARN"
-          echo "  - $OUTPUT_FORMATS_LAYER_ARN"

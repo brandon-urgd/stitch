@@ -1,6 +1,3 @@
-# CORE IMAGE LAYER
-# Essential image processing and numerical computing
-
-# Core Image Processing
-Pillow>=11.3.0                    # Image processing beast
-numpy>=2.3.3                      # Numerical computing foundation
+# CORE IMAGE LAYER - MINIMAL
+Pillow>=11.3.0
+numpy>=2.3.3

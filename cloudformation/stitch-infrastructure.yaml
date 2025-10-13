@@ -183,36 +183,6 @@ Resources:
         - x86_64
       LicenseInfo: "MIT"
 
-  # File I/O Lambda Layer
-  FileIOLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      LayerName: !Sub 'urgd-file-io-${Environment}'
-      Description: !Sub "Universal file input/output and metadata - ${Environment}"
-      Content:
-        S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/file-io.zip'
-      CompatibleRuntimes:
-        - python3.12
-      CompatibleArchitectures:
-        - x86_64
-      LicenseInfo: "MIT"
-
-  # Output Formats Lambda Layer
-  OutputFormatsLayer:
-    Type: AWS::Lambda::LayerVersion
-    Properties:
-      LayerName: !Sub 'urgd-output-formats-${Environment}'
-      Description: !Sub "Multiple output format generation - ${Environment}"
-      Content:
-        S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/output-formats.zip'
-      CompatibleRuntimes:
-        - python3.12
-      CompatibleArchitectures:
-        - x86_64
-      LicenseInfo: "MIT"
-
   # Lambda Function
   StitchSvgConverterFunction:
     Type: AWS::Lambda::Function
@@ -224,8 +194,6 @@ Resources:
       Layers:
         - !Ref CoreImageLayer
         - !Ref SvgEmbroideryLayer
-        - !Ref FileIOLayer
-        - !Ref OutputFormatsLayer
       Code:
         S3Bucket: 'urgd-applicationdata'
         S3Key: !Ref StitchFunctionCodeKey
