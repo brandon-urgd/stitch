@@ -160,7 +160,7 @@ Resources:
       Description: "The most badass, high-powered Lambda layer ever built"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'layers/ultimate-dependencies.zip'
+        S3Key: 'stitch/layers/ultimate-dependencies.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
