@@ -61,20 +61,20 @@ except ImportError:
 s3_client = boto3.client('s3')
 BUCKET_NAME = os.environ.get('BUCKET_NAME', 'urgd-stitch-storage')
 
-# Professional quality settings based on industry standards
+# High quality settings for professional embroidery
 PROFESSIONAL_SETTINGS = {
-    'fill_density': 4.0,  # 4mm between rows (6.35 SPI) - professional standard
-    'fill_stitch_length': 1.5,  # 1.5mm stitch length for fill
-    'satin_stitch_length': 2.0,  # 2.0mm stitch length for satin
-    'running_stitch_length': 2.5,  # 2.5mm stitch length for running
-    'underlay_density': 8.0,  # 8mm between underlay rows
-    'max_stitch_length': 4.0,  # Maximum stitch length to prevent puckering
-    'min_stitch_length': 0.5,  # Minimum stitch length for stability
-    'satin_width_threshold': 8.0,  # Use satin for shapes narrower than 8mm
+    'fill_density': 2.5,  # 2.5mm between rows (10 SPI) - high quality
+    'fill_stitch_length': 1.2,  # 1.2mm stitch length for fill - finer detail
+    'satin_stitch_length': 1.5,  # 1.5mm stitch length for satin - smoother
+    'running_stitch_length': 2.0,  # 2.0mm stitch length for running - more precise
+    'underlay_density': 5.0,  # 5mm between underlay rows - better support
+    'max_stitch_length': 3.0,  # Maximum stitch length to prevent puckering
+    'min_stitch_length': 0.3,  # Minimum stitch length for stability
+    'satin_width_threshold': 6.0,  # Use satin for shapes narrower than 6mm
     'fill_angle': 45,  # Standard fill angle
     'underlay_angle': 90,  # Perpendicular underlay angle
-    'max_stitches_per_block': 2000,  # Prevent memory issues
-    'quality_level': 'professional'  # professional, standard, fast
+    'max_stitches_per_block': 5000,  # Allow more stitches for high quality
+    'quality_level': 'high'  # high quality for professional results
 }
 
 def lambda_handler(event, context):
@@ -1102,12 +1102,15 @@ def assess_embroidery_quality(stitch_count, pes_content):
         elif stitch_count < 100:
             complexity = "simple"
             level = "basic"
-        elif stitch_count < 500:
+        elif stitch_count < 300:
             complexity = "moderate"
             level = "good"
-        elif stitch_count < 2000:
+        elif stitch_count < 1000:
             complexity = "complex"
-            level = "professional"
+            level = "high"
+        elif stitch_count < 3000:
+            complexity = "highly_complex"
+            level = "high"
         else:
             complexity = "highly_complex"
             level = "professional"
