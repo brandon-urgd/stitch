@@ -10,6 +10,7 @@ import traceback
 import xml.etree.ElementTree as ET
 import math
 import re
+import struct
 from typing import List, Tuple, Dict, Any, Optional
 
 # SVG parsing and path handling
@@ -293,27 +294,45 @@ def convert_path_to_coordinates(path_data: str, transform: str = None) -> List[T
 def parse_basic_path(path_data: str) -> List[Tuple[float, float]]:
     """Basic path parsing fallback when svgpathtools is not available."""
     coords = []
-    # Extract M, L, C commands and convert to coordinates
-    commands = re.findall(r'[MLC][^MLC]*', path_data.upper())
     
-    current_x, current_y = 0, 0
-    
-    for cmd in commands:
-        if cmd.startswith('M'):  # Move to
-            coords_str = cmd[1:].strip()
-            if coords_str:
-                parts = coords_str.split()
-                if len(parts) >= 2:
-                    current_x, current_y = float(parts[0]), float(parts[1])
-                    coords.append((current_x, current_y))
-        elif cmd.startswith('L'):  # Line to
-            coords_str = cmd[1:].strip()
-            if coords_str:
-                parts = coords_str.split()
-                if len(parts) >= 2:
-                    current_x, current_y = float(parts[0]), float(parts[1])
-                    coords.append((current_x, current_y))
-        # Add more command types as needed
+    try:
+        # Clean up path data - remove Z commands and other non-coordinate elements
+        path_data = path_data.strip()
+        
+        # Remove Z commands and other non-coordinate elements
+        path_data = re.sub(r'[Zz]', '', path_data)
+        path_data = re.sub(r'[MLHVCSQTA]', ' ', path_data)
+        
+        # Find all coordinate pairs using regex
+        coord_pattern = r'([+-]?\d*\.?\d+),([+-]?\d*\.?\d+)'
+        matches = re.findall(coord_pattern, path_data)
+        
+        for x_str, y_str in matches:
+            try:
+                x = float(x_str)
+                y = float(y_str)
+                coords.append((x, y))
+            except ValueError:
+                continue
+        
+        # If no comma-separated pairs found, try space-separated
+        if not coords:
+            coord_pattern = r'([+-]?\d*\.?\d+)\s+([+-]?\d*\.?\d+)'
+            matches = re.findall(coord_pattern, path_data)
+            
+            for x_str, y_str in matches:
+                try:
+                    x = float(x_str)
+                    y = float(y_str)
+                    coords.append((x, y))
+                except ValueError:
+                    continue
+        
+        return coords
+        
+    except Exception as e:
+        print(f"Error in basic path parsing: {e}")
+        return []
     
     return coords
 
@@ -959,7 +978,8 @@ def create_pes_file_with_stitches(stitches, colors):
         
     except Exception as e:
         print(f"Error creating PES file with stitches: {e}")
-        return create_default_pes_file()
+        # Return a minimal PES file to avoid recursion
+        return b'#PES0060\x00\x00\x00\x00\x01\x00\x64\x00\x64\x00\x00\x00\x00\x00\x00\x00'
 
 def count_stitches_in_pes(pes_content):
     """Count actual stitches in PES file using industry standard methods."""
@@ -974,22 +994,21 @@ def count_stitches_in_pes(pes_content):
         stitch_count = 0
         
         # Method 1: Count stitch commands in PES format
-        # PES files have stitch commands with specific byte patterns
+        # Look for coordinate patterns in the PES file
         i = 0
-        while i < len(pes_content) - 1:
-            byte1 = pes_content[i]
-            byte2 = pes_content[i + 1] if i + 1 < len(pes_content) else 0
-            
-            # Stitch command patterns in PES format
-            if byte1 == 0x00 and byte2 in [0x01, 0x02, 0x03, 0x04, 0x05]:
-                stitch_count += 1
-                i += 2
-            elif byte1 == 0x80 and byte2 == 0x00:  # Jump stitch
-                stitch_count += 1
-                i += 2
-            elif byte1 == 0x00 and byte2 == 0x00:  # End of sequence
-                break
-            else:
+        while i < len(pes_content) - 4:
+            # Look for patterns that look like coordinates (2-byte values)
+            try:
+                val1 = struct.unpack('<H', pes_content[i:i+2])[0]
+                val2 = struct.unpack('<H', pes_content[i+2:i+4])[0]
+                
+                # Check if these look like reasonable coordinates (0-1000 range)
+                if 0 < val1 < 1000 and 0 < val2 < 1000:
+                    stitch_count += 1
+                    i += 4  # Skip the coordinate pair
+                else:
+                    i += 1
+            except:
                 i += 1
         
         # Method 2: If pyembroidery is available, use it for more accurate counting
