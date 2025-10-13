@@ -180,22 +180,68 @@ jobs:
         
     - name: Build Lambda package
       run: |
-        echo "🔨 Building Lambda package..."
-        cd lambda
-        pip install -r requirements.txt -t .
-        zip -r ../lambda-package.zip .
-        cd ..
-        echo "✅ Lambda package built: lambda-package.zip"
+        VERSION="${{ needs.version.outputs.version }}"
+        echo "🔨 Building Lambda package for version: $VERSION"
+        
+        # Create artifacts directory
+        mkdir -p artifacts
+        
+        # Create a temporary build directory
+        BUILD_DIR="/tmp/lambda-build-stitch-${VERSION}"
+        mkdir -p "$BUILD_DIR"
+        
+        # Copy Lambda function files
+        cp -r lambda/* "$BUILD_DIR/"
+        
+        # Install dependencies using pip
+        cd "$BUILD_DIR"
+        pip install -r requirements.txt -t . --platform linux_x86_64 --only-binary=:all: --no-deps
+        pip install -r requirements.txt -t . --platform linux_x86_64 --only-binary=:all:
+        cd - > /dev/null
+        
+        # Create zip file from build directory
+        cd "$BUILD_DIR"
+        zip -r "/tmp/stitch-function-${VERSION}.zip" . -x "*.git*" "*.DS_Store*" "__pycache__/*" "*.pyc"
+        cd - > /dev/null
+        
+        # Test the Lambda package imports before zipping
+        echo "🧪 Testing Lambda package imports..."
+        cd "$BUILD_DIR"
+        python3 -c "
+import sys
+sys.path.insert(0, '.')
+try:
+    from svgpathtools import parse_path
+    print('✅ svgpathtools imported successfully')
+except ImportError as e:
+    print(f'❌ svgpathtools import failed: {e}')
+    sys.exit(1)
+try:
+    from svg.path import parse_path as parse_path_simple
+    print('✅ svg.path imported successfully')
+except ImportError as e:
+    print(f'❌ svg.path import failed: {e}')
+    sys.exit(1)
+print('✅ All imports successful')
+"
+        cd - > /dev/null
+        
+        # Move to artifacts directory
+        mv "/tmp/stitch-function-${VERSION}.zip" "artifacts/"
+        
+        # Clean up build directory
+        rm -rf "$BUILD_DIR"
+        
+        echo "✅ Lambda package built: artifacts/stitch-function-${VERSION}.zip"
+        echo "📦 Package size: $(du -h artifacts/stitch-function-${VERSION}.zip | cut -f1)"
         
     - name: Upload artifacts to S3
       run: |
-        # Get current git commit hash
-        GIT_COMMIT=$(git rev-parse --short HEAD)
-        echo "📦 Git commit: $GIT_COMMIT"
+        VERSION="${{ needs.version.outputs.version }}"
+        echo "📦 Uploading artifacts for version: $VERSION"
         
         # Upload Lambda package to artifacts folder (broadcast style)
-        VERSION="${{ needs.version.outputs.version }}"
-        aws s3 cp lambda-package.zip s3://urgd-applicationdata/stitch/artifacts/${VERSION}/stitch-function-${VERSION}.zip
+        aws s3 cp artifacts/stitch-function-${VERSION}.zip s3://urgd-applicationdata/stitch/artifacts/${VERSION}/stitch-function-${VERSION}.zip
         echo "✅ Lambda package uploaded to S3 artifacts folder"
         
         # Upload CloudFormation template to cloudformation folder

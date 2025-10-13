@@ -18,18 +18,28 @@ try:
     from svgpathtools import parse_path, Path, Line, CubicBezier, QuadraticBezier, Arc
     SVGPATHTOOLS_AVAILABLE = True
     print("svgpathtools library loaded successfully")
-except ImportError:
+except ImportError as e:
     SVGPATHTOOLS_AVAILABLE = False
-    print("Warning: svgpathtools not available, trying svg.path")
+    print(f"Warning: svgpathtools not available, trying svg.path. Error: {e}")
+    print(f"svgpathtools import traceback: {traceback.format_exc()}")
+except Exception as e:
+    SVGPATHTOOLS_AVAILABLE = False
+    print(f"Warning: svgpathtools failed with unexpected error: {e}")
+    print(f"svgpathtools import traceback: {traceback.format_exc()}")
 
 # Try svg.path as a lighter alternative
 try:
     from svg.path import parse_path as parse_path_simple
     SVGPATH_AVAILABLE = True
     print("svg.path library loaded successfully")
-except ImportError:
+except ImportError as e:
     SVGPATH_AVAILABLE = False
-    print("Warning: svg.path not available, using basic path parsing")
+    print(f"Warning: svg.path not available, using basic path parsing. Error: {e}")
+    print(f"svg.path import traceback: {traceback.format_exc()}")
+except Exception as e:
+    SVGPATH_AVAILABLE = False
+    print(f"Warning: svg.path failed with unexpected error: {e}")
+    print(f"svg.path import traceback: {traceback.format_exc()}")
 
 # Multipart form data parsing
 try:
