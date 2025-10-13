@@ -168,15 +168,15 @@ Resources:
       LicenseInfo: "MIT"
       RetentionPolicy: Retain
 
-  # Computer Vision Lambda Layer
-  ComputerVisionLayer:
+  # OpenCV Core Lambda Layer
+  OpenCVCoreLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-computer-vision-${Environment}'
-      Description: "Computer vision and advanced image processing"
+      LayerName: !Sub 'urgd-opencv-core-${Environment}'
+      Description: "OpenCV core and essential image processing"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/computer-vision.zip'
+        S3Key: 'stitch/layers/opencv-core.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -184,15 +184,63 @@ Resources:
       LicenseInfo: "MIT"
       RetentionPolicy: Retain
 
-  # Data Science Lambda Layer
-  DataScienceLayer:
+  # Advanced Image Lambda Layer
+  AdvancedImageLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-data-science-${Environment}'
-      Description: "Data science and ML tools"
+      LayerName: !Sub 'urgd-advanced-image-${Environment}'
+      Description: "Advanced image analysis and specialized formats"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/data-science.zip'
+        S3Key: 'stitch/layers/advanced-image.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # ML Core Lambda Layer
+  MLCoreLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-ml-core-${Environment}'
+      Description: "Machine learning core tools"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/ml-core.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Data Viz Lambda Layer
+  DataVizLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-data-viz-${Environment}'
+      Description: "Data visualization and analysis"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/data-viz.zip'
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - x86_64
+      LicenseInfo: "MIT"
+      RetentionPolicy: Retain
+
+  # Graphics Render Lambda Layer
+  GraphicsRenderLayer:
+    Type: AWS::Lambda::LayerVersion
+    Properties:
+      LayerName: !Sub 'urgd-graphics-render-${Environment}'
+      Description: "Graphics and document rendering"
+      Content:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: 'stitch/layers/graphics-render.zip'
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
@@ -210,8 +258,11 @@ Resources:
       Role: !GetAtt LambdaExecutionRole.Arn
       Layers:
         - !Ref CoreImageLayer
-        - !Ref ComputerVisionLayer
-        - !Ref DataScienceLayer
+        - !Ref OpenCVCoreLayer
+        - !Ref AdvancedImageLayer
+        - !Ref MLCoreLayer
+        - !Ref DataVizLayer
+        - !Ref GraphicsRenderLayer
       Code:
         S3Bucket: 'urgd-applicationdata'
         S3Key: !Ref StitchFunctionCodeKey

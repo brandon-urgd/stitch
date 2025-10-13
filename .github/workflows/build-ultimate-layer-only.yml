@@ -118,63 +118,150 @@ jobs:
         
         echo "🚀 CORE IMAGE LAYER DEPLOYED TO S3!"
 
-    - name: Build Computer Vision Layer
+    - name: Build OpenCV Core Layer
       run: |
-        echo "🔥 Building Computer Vision Layer (medium)..."
+        echo "🔥 Building OpenCV Core Layer (smallest)..."
         
         # Create build directory
-        mkdir -p computer-vision-build
-        cd computer-vision-build
+        mkdir -p opencv-core-build
+        cd opencv-core-build
         
         # Copy requirements
-        cp ../layers/computer-vision/requirements.txt .
+        cp ../layers/opencv-core/requirements.txt .
         
         # Install Python dependencies
         pip install --upgrade pip setuptools wheel
-        echo "⚡ Installing computer vision dependencies..."
+        echo "⚡ Installing OpenCV core dependencies..."
         pip install -r requirements.txt -t ./python/ --no-cache-dir
         
         # Create the layer zip
-        echo "💥 Creating computer vision layer package..."
-        zip -r computer-vision.zip python/
+        echo "💥 Creating OpenCV core layer package..."
+        zip -r opencv-core.zip python/
         
         # Get the size
-        LAYER_SIZE=$(du -h computer-vision.zip | cut -f1)
-        echo "🎯 COMPUTER VISION LAYER BUILT! Size: $LAYER_SIZE"
+        LAYER_SIZE=$(du -h opencv-core.zip | cut -f1)
+        echo "🎯 OPENCV CORE LAYER BUILT! Size: $LAYER_SIZE"
         
         # Upload to S3
-        aws s3 cp computer-vision.zip s3://urgd-applicationdata/stitch/layers/computer-vision.zip --region us-west-2
+        aws s3 cp opencv-core.zip s3://urgd-applicationdata/stitch/layers/opencv-core.zip --region us-west-2
         
-        echo "🚀 COMPUTER VISION LAYER DEPLOYED TO S3!"
+        echo "🚀 OPENCV CORE LAYER DEPLOYED TO S3!"
 
-    - name: Build Data Science Layer
+    - name: Build Advanced Image Layer
       run: |
-        echo "🔥 Building Data Science Layer (largest)..."
+        echo "🔥 Building Advanced Image Layer (medium)..."
         
         # Create build directory
-        mkdir -p data-science-build
-        cd data-science-build
+        mkdir -p advanced-image-build
+        cd advanced-image-build
         
         # Copy requirements
-        cp ../layers/data-science/requirements.txt .
+        cp ../layers/advanced-image/requirements.txt .
         
         # Install Python dependencies
         pip install --upgrade pip setuptools wheel
-        echo "⚡ Installing data science dependencies..."
+        echo "⚡ Installing advanced image dependencies..."
         pip install -r requirements.txt -t ./python/ --no-cache-dir
         
         # Create the layer zip
-        echo "💥 Creating data science layer package..."
-        zip -r data-science.zip python/
+        echo "💥 Creating advanced image layer package..."
+        zip -r advanced-image.zip python/
         
         # Get the size
-        LAYER_SIZE=$(du -h data-science.zip | cut -f1)
-        echo "🎯 DATA SCIENCE LAYER BUILT! Size: $LAYER_SIZE"
+        LAYER_SIZE=$(du -h advanced-image.zip | cut -f1)
+        echo "🎯 ADVANCED IMAGE LAYER BUILT! Size: $LAYER_SIZE"
         
         # Upload to S3
-        aws s3 cp data-science.zip s3://urgd-applicationdata/stitch/layers/data-science.zip --region us-west-2
+        aws s3 cp advanced-image.zip s3://urgd-applicationdata/stitch/layers/advanced-image.zip --region us-west-2
         
-        echo "🚀 DATA SCIENCE LAYER DEPLOYED TO S3!"
+        echo "🚀 ADVANCED IMAGE LAYER DEPLOYED TO S3!"
+
+    - name: Build ML Core Layer
+      run: |
+        echo "🔥 Building ML Core Layer (small)..."
+        
+        # Create build directory
+        mkdir -p ml-core-build
+        cd ml-core-build
+        
+        # Copy requirements
+        cp ../layers/ml-core/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing ML core dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating ML core layer package..."
+        zip -r ml-core.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h ml-core.zip | cut -f1)
+        echo "🎯 ML CORE LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp ml-core.zip s3://urgd-applicationdata/stitch/layers/ml-core.zip --region us-west-2
+        
+        echo "🚀 ML CORE LAYER DEPLOYED TO S3!"
+
+    - name: Build Data Viz Layer
+      run: |
+        echo "🔥 Building Data Viz Layer (medium)..."
+        
+        # Create build directory
+        mkdir -p data-viz-build
+        cd data-viz-build
+        
+        # Copy requirements
+        cp ../layers/data-viz/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing data viz dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating data viz layer package..."
+        zip -r data-viz.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h data-viz.zip | cut -f1)
+        echo "🎯 DATA VIZ LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp data-viz.zip s3://urgd-applicationdata/stitch/layers/data-viz.zip --region us-west-2
+        
+        echo "🚀 DATA VIZ LAYER DEPLOYED TO S3!"
+
+    - name: Build Graphics Render Layer
+      run: |
+        echo "🔥 Building Graphics Render Layer (small)..."
+        
+        # Create build directory
+        mkdir -p graphics-render-build
+        cd graphics-render-build
+        
+        # Copy requirements
+        cp ../layers/graphics-render/requirements.txt .
+        
+        # Install Python dependencies
+        pip install --upgrade pip setuptools wheel
+        echo "⚡ Installing graphics render dependencies..."
+        pip install -r requirements.txt -t ./python/ --no-cache-dir
+        
+        # Create the layer zip
+        echo "💥 Creating graphics render layer package..."
+        zip -r graphics-render.zip python/
+        
+        # Get the size
+        LAYER_SIZE=$(du -h graphics-render.zip | cut -f1)
+        echo "🎯 GRAPHICS RENDER LAYER BUILT! Size: $LAYER_SIZE"
+        
+        # Upload to S3
+        aws s3 cp graphics-render.zip s3://urgd-applicationdata/stitch/layers/graphics-render.zip --region us-west-2
+        
+        echo "🚀 GRAPHICS RENDER LAYER DEPLOYED TO S3!"
 
     - name: Publish Core Image Layer
       run: |
@@ -192,49 +279,103 @@ jobs:
         echo "🎯 Core Image Layer ARN: $CORE_IMAGE_LAYER_ARN"
         echo "CORE_IMAGE_LAYER_ARN=$CORE_IMAGE_LAYER_ARN" >> $GITHUB_ENV
 
-    - name: Publish Computer Vision Layer
+    - name: Publish OpenCV Core Layer
       run: |
-        # Create Computer Vision layer
-        COMPUTER_VISION_LAYER_ARN=$(aws lambda publish-layer-version \
-          --layer-name urgd-computer-vision-${{ github.event.inputs.environment }} \
-          --description "Computer vision and advanced image processing - ${{ github.event.inputs.environment }}" \
-          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/computer-vision.zip \
+        # Create OpenCV Core layer
+        OPENCV_CORE_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-opencv-core-${{ github.event.inputs.environment }} \
+          --description "OpenCV core and essential image processing - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/opencv-core.zip \
           --compatible-runtimes python3.12 \
           --compatible-architectures x86_64 \
           --query 'LayerVersionArn' \
           --output text \
           --region us-west-2)
         
-        echo "🎯 Computer Vision Layer ARN: $COMPUTER_VISION_LAYER_ARN"
-        echo "COMPUTER_VISION_LAYER_ARN=$COMPUTER_VISION_LAYER_ARN" >> $GITHUB_ENV
+        echo "🎯 OpenCV Core Layer ARN: $OPENCV_CORE_LAYER_ARN"
+        echo "OPENCV_CORE_LAYER_ARN=$OPENCV_CORE_LAYER_ARN" >> $GITHUB_ENV
 
-    - name: Publish Data Science Layer
+    - name: Publish Advanced Image Layer
       run: |
-        # Create Data Science layer
-        DATA_SCIENCE_LAYER_ARN=$(aws lambda publish-layer-version \
-          --layer-name urgd-data-science-${{ github.event.inputs.environment }} \
-          --description "Data science and ML tools - ${{ github.event.inputs.environment }}" \
-          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/data-science.zip \
+        # Create Advanced Image layer
+        ADVANCED_IMAGE_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-advanced-image-${{ github.event.inputs.environment }} \
+          --description "Advanced image analysis and specialized formats - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/advanced-image.zip \
           --compatible-runtimes python3.12 \
           --compatible-architectures x86_64 \
           --query 'LayerVersionArn' \
           --output text \
           --region us-west-2)
         
-        echo "🎯 Data Science Layer ARN: $DATA_SCIENCE_LAYER_ARN"
-        echo "DATA_SCIENCE_LAYER_ARN=$DATA_SCIENCE_LAYER_ARN" >> $GITHUB_ENV
+        echo "🎯 Advanced Image Layer ARN: $ADVANCED_IMAGE_LAYER_ARN"
+        echo "ADVANCED_IMAGE_LAYER_ARN=$ADVANCED_IMAGE_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish ML Core Layer
+      run: |
+        # Create ML Core layer
+        ML_CORE_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-ml-core-${{ github.event.inputs.environment }} \
+          --description "Machine learning core tools - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/ml-core.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 ML Core Layer ARN: $ML_CORE_LAYER_ARN"
+        echo "ML_CORE_LAYER_ARN=$ML_CORE_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Data Viz Layer
+      run: |
+        # Create Data Viz layer
+        DATA_VIZ_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-data-viz-${{ github.event.inputs.environment }} \
+          --description "Data visualization and analysis - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/data-viz.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Data Viz Layer ARN: $DATA_VIZ_LAYER_ARN"
+        echo "DATA_VIZ_LAYER_ARN=$DATA_VIZ_LAYER_ARN" >> $GITHUB_ENV
+
+    - name: Publish Graphics Render Layer
+      run: |
+        # Create Graphics Render layer
+        GRAPHICS_RENDER_LAYER_ARN=$(aws lambda publish-layer-version \
+          --layer-name urgd-graphics-render-${{ github.event.inputs.environment }} \
+          --description "Graphics and document rendering - ${{ github.event.inputs.environment }}" \
+          --content S3Bucket=urgd-applicationdata,S3Key=stitch/layers/graphics-render.zip \
+          --compatible-runtimes python3.12 \
+          --compatible-architectures x86_64 \
+          --query 'LayerVersionArn' \
+          --output text \
+          --region us-west-2)
+        
+        echo "🎯 Graphics Render Layer ARN: $GRAPHICS_RENDER_LAYER_ARN"
+        echo "GRAPHICS_RENDER_LAYER_ARN=$GRAPHICS_RENDER_LAYER_ARN" >> $GITHUB_ENV
 
     - name: Output Layer Info
       run: |
-        echo "🚀 ALL THREE LAMBDA LAYERS DEPLOYED!"
+        echo "🚀 ALL SIX LAMBDA LAYERS DEPLOYED!"
         echo "💪 Core Image Layer ARN: $CORE_IMAGE_LAYER_ARN"
-        echo "💪 Computer Vision Layer ARN: $COMPUTER_VISION_LAYER_ARN"
-        echo "💪 Data Science Layer ARN: $DATA_SCIENCE_LAYER_ARN"
+        echo "💪 OpenCV Core Layer ARN: $OPENCV_CORE_LAYER_ARN"
+        echo "💪 Advanced Image Layer ARN: $ADVANCED_IMAGE_LAYER_ARN"
+        echo "💪 ML Core Layer ARN: $ML_CORE_LAYER_ARN"
+        echo "💪 Data Viz Layer ARN: $DATA_VIZ_LAYER_ARN"
+        echo "💪 Graphics Render Layer ARN: $GRAPHICS_RENDER_LAYER_ARN"
         echo "🔥 Ready to power your Lambda functions!"
-        echo "⚡ Split into THREE focused layers for maximum efficiency!"
+        echo "⚡ Split into SIX focused layers for maximum efficiency!"
         echo ""
         echo "📝 To use these layers in your Lambda functions:"
         echo "   Layers:"
         echo "     - $CORE_IMAGE_LAYER_ARN"
-        echo "     - $COMPUTER_VISION_LAYER_ARN"
-        echo "     - $DATA_SCIENCE_LAYER_ARN"
+        echo "     - $OPENCV_CORE_LAYER_ARN"
+        echo "     - $ADVANCED_IMAGE_LAYER_ARN"
+        echo "     - $ML_CORE_LAYER_ARN"
+        echo "     - $DATA_VIZ_LAYER_ARN"
+        echo "     - $GRAPHICS_RENDER_LAYER_ARN"

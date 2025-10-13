@@ -1,0 +1,7 @@
+# GRAPHICS RENDER LAYER (Small - under 100MB)
+# Graphics and document rendering
+
+# Graphics & Rendering
+cairosvg>=2.8.0                   # SVG to PNG/PDF conversion
+svglib>=1.6.0                     # SVG to other formats
+reportlab>=4.2.0                  # PDF generation

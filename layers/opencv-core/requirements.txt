@@ -1,0 +1,10 @@
+# OPENCV CORE LAYER (Smallest - under 100MB)
+# Just OpenCV and essential dependencies
+
+# Computer Vision Core
+opencv-python>=4.10.0             # Computer vision powerhouse
+numpy>=2.3.3                      # Numerical computing foundation
+
+# Essential Image Processing
+Pillow>=11.3.0                    # Image processing beast
+scipy>=1.15.0                     # Scientific algorithms

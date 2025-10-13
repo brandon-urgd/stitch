@@ -1,0 +1,7 @@
+# DATA VIZ LAYER (Medium - under 150MB)
+# Data visualization and analysis
+
+# Data Science Powerhouse
+pandas>=2.2.0                     # Data manipulation beast
+matplotlib>=3.10.0                # Plotting and visualization
+seaborn>=0.13.0                   # Statistical visualization
