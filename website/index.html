@@ -3,25 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>stitch - Dark Glass Edition | ur/gd studios</title>
+    <title>ur/gd Studios: stitch</title>
     
     <!-- Open Graph Meta Tags -->
     <meta property="og:title" content="stitch - SVG to PES Converter">
-    <meta property="og:description" content="Convert SVG files to PES embroidery format instantly. Professional SVG to PES converter powered by ur/gd studios.">
+    <meta property="og:description" content="Convert SVG files to PES embroidery format instantly. Professional SVG to PES converter powered by ur/gd Studios.">
     <meta property="og:image" content="https://dev.stitch.urgdstudios.com/assets/urgd-logo-og.png" id="og-image">
     <meta property="og:url" content="https://dev.stitch.urgdstudios.com" id="og-url">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="ur/gd studios">
+    <meta property="og:site_name" content="ur/gd Studios">
     
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="stitch - SVG to PES Converter">
-    <meta name="twitter:description" content="Convert SVG files to PES embroidery format instantly. Professional SVG to PES converter powered by ur/gd studios.">
+    <meta name="twitter:description" content="Convert SVG files to PES embroidery format instantly. Professional SVG to PES converter powered by ur/gd Studios.">
     <meta name="twitter:image" content="https://dev.stitch.urgdstudios.com/assets/urgd-logo-og.png" id="twitter-image">
     <meta name="twitter:site" content="@urgdstudios">
     
     <!-- Additional Meta Tags -->
-    <meta name="author" content="ur/gd studios">
+    <meta name="author" content="ur/gd Studios">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="/" id="canonical-url">
     
@@ -356,19 +356,54 @@
                 height: 250px;
             }
         }
+
+        /* Accessibility styles */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 6px;
+            background: #000;
+            color: #fff;
+            padding: 8px;
+            text-decoration: none;
+            z-index: 1000;
+        }
+
+        .skip-link:focus {
+            top: 6px;
+        }
+
+        .convert-btn:focus, .download-btn:focus, #fileInput:focus {
+            outline: 2px solid #00ff88;
+            outline-offset: 2px;
+        }
+
+        .upload-area:focus-within {
+            outline: 2px solid #00ff88;
+            outline-offset: 2px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="assets/urgd-logo.png" alt="ur/gd" class="urgd-logo" />
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div class="container" id="main-content">
+        <img src="assets/urgd-logo.png" alt="ur/gd Studios logo" class="urgd-logo" />
         <div class="logo">🧵 stitch</div>
         <div class="subtitle">Convert SVG files to PES embroidery format</div>
         
-        <div class="upload-area" id="uploadArea">
+        <div class="upload-area" id="uploadArea" role="button" tabindex="0" aria-label="Upload SVG file area">
             <div class="upload-icon">📁</div>
             <div class="upload-text">Click to select SVG file</div>
             <div class="upload-hint">or drag and drop here</div>
-            <input type="file" id="fileInput" accept=".svg" />
+            <input type="file" id="fileInput" accept=".svg" aria-label="Select SVG file to convert" />
         </div>
         
         <div class="file-info" id="fileInfo">
@@ -376,22 +411,23 @@
             <div class="file-size" id="fileSize"></div>
         </div>
         
-        <button class="convert-btn" id="convertBtn" disabled>Convert to PES</button>
+        <button class="convert-btn" id="convertBtn" role="button" aria-label="Convert selected SVG file to PES format" disabled>Convert to PES</button>
         
-        <div class="progress-container" id="progressContainer">
+        <div class="progress-container" id="progressContainer" role="progressbar" aria-label="Conversion progress">
             <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
             <div class="progress-text" id="progressText">Converting...</div>
         </div>
         
         <div class="download-area" id="downloadArea">
             <div>✅ Conversion complete!</div>
-            <a href="#" class="download-btn" id="downloadBtn">Download PES File</a>
+            <a href="#" class="download-btn" id="downloadBtn" role="button" aria-label="Download converted PES file">Download PES File</a>
         </div>
         
-        <div class="error" id="errorMessage"></div>
-        <div class="success" id="successMessage"></div>
+        <div class="error" id="errorMessage" role="alert" aria-live="polite"></div>
+        <div class="success" id="successMessage" role="status" aria-live="polite"></div>
         
-        <div class="footer">Quietly powerful, built by <a href="https://www.urgdstudios.com" target="_blank">ur/gd studios</a> • Made with ❤️ by Brandon, for Nicole.</div>
+        <div class="footer">Quietly powerful, built by <a href="https://www.urgdstudios.com" target="_blank" aria-label="Visit ur/gd Studios website">ur/gd Studios</a><br>
+        <small style="opacity: 0.7; font-size: 0.8em;">See our <a href="https://www.urgdstudios.com" target="_blank" aria-label="View Terms of Use and Privacy Policy">main page</a> for Terms of Use and Privacy Policy</small></div>
     </div>
 
     <script>
