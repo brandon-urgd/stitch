@@ -384,14 +384,11 @@ jobs:
       id: waf
       if: steps.cloudfront.outputs.CLOUDFRONT_ID != ''
       run: |
-        ENVIRONMENT="${{ env.ENVIRONMENT }}"
-        WAF_ENVIRONMENT="${{ env.WAF_ENVIRONMENT }}"
         CLOUDFRONT_ID="${{ steps.cloudfront.outputs.CLOUDFRONT_ID }}"
         
-        echo "🔗 Associating WAF with CloudFront..."
+        echo "🔗 Associating consolidated WAF with CloudFront..."
         
-        # Use environment-aware WAF
-        WAF_SSM_PARAM="/urgd/waf/$WAF_ENVIRONMENT/web_acl_arn"
+        WAF_SSM_PARAM="/urgd/waf/web_acl_arn"
         
         WAF_ARN=$(aws ssm get-parameter \
           --name "$WAF_SSM_PARAM" \
