@@ -129,6 +129,10 @@ Resources:
                   - s3:PutObject
                   - s3:DeleteObject
                 Resource: !Sub 'arn:aws:s3:::${StitchStorageBucket}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub 'arn:aws:s3:::${StitchStorageBucket}'
       Tags:
         - Key: brand
           Value: urgd
