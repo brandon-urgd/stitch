@@ -21,10 +21,26 @@ Parameters:
     Default: 'stitch/artifacts/latest/stitch-function-latest.zip'
     Description: 'S3 key for Stitch SVG Converter Lambda function code'
   
+  StitchLayerCodeKey:
+    Type: String
+    Default: 'stitch/layers/latest/svg-embroidery.zip'
+    Description: 'S3 key for SVG Embroidery Lambda Layer'
+  
   GitCommit:
     Type: String
     Default: 'latest'
     Description: 'Git commit hash for versioning'
+
+  # Monitoring Parameters
+  MonitoringEmail:
+    Type: String
+    Default: alerts@urgd.dev
+    Description: Email address for monitoring alerts
+
+  CriticalAlertsEmail:
+    Type: String
+    Default: critical@urgd.dev
+    Description: Email address for critical alerts
 
   # Certificate ARNs for custom domains
   AcmCertArnApiRegion:
@@ -54,6 +70,10 @@ Conditions:
     !Equals
       - !Ref Environment
       - 'prod'
+  EnableCriticalAlerts:
+    !Equals
+      - !Ref Environment
+      - 'prod'
 
 Resources:
   # S3 Bucket for user temporary file storage
@@ -77,6 +97,12 @@ Resources:
           Value: urgd
         - Key: project
           Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # IAM Role for Lambda function
   LambdaExecutionRole:
@@ -108,6 +134,12 @@ Resources:
           Value: urgd
         - Key: project
           Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # S3 Bucket for static website hosting
   StitchWebsiteBucket:
@@ -127,6 +159,12 @@ Resources:
           Value: urgd
         - Key: project
           Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # Origin Access Control for CloudFront
   StitchOriginAccessControl:
@@ -156,22 +194,39 @@ Resources:
   SvgEmbroideryLayer:
     Type: AWS::Lambda::LayerVersion
     Properties:
-      LayerName: !Sub 'urgd-svg-embroidery-${Environment}'
-      Description: !Sub "SVG processing and embroidery file generation - ${Environment}"
+      LayerName: !Sub 'urgd-svg-embroidery-${Environment}-${GitCommit}'
+      Description: !Sub "SVG processing and embroidery - ${Environment} - ${GitCommit}"
       Content:
         S3Bucket: 'urgd-applicationdata'
-        S3Key: 'stitch/layers/svg-embroidery.zip'
+        S3Key: !Ref StitchLayerCodeKey
       CompatibleRuntimes:
         - python3.12
       CompatibleArchitectures:
         - x86_64
-      LicenseInfo: "MIT"
+      LicenseInfo: "UNLICENSED"
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # Lambda Function
   StitchSvgConverterFunction:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub 'urgd-stitch-svg-converter-${Environment}-${GitCommit}'
+      FunctionName: !Sub 'urgd-stitch-svg-converter-v1-${Environment}-${GitCommit}'
       Runtime: python3.12
       Handler: svg_converter.lambda_handler
       Role: !GetAtt LambdaExecutionRole.Arn
@@ -182,22 +237,84 @@ Resources:
         S3Key: !Ref StitchFunctionCodeKey
       MemorySize: 1024
       Timeout: 60
+      TracingConfig:
+        Mode: Active
       Environment:
         Variables:
           BUCKET_NAME: !Ref StitchStorageBucket
+          ENVIRONMENT: !Ref Environment
+          VERSION: !Ref GitCommit
       Tags:
         - Key: brand
           Value: urgd
         - Key: project
           Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # CloudWatch Log Group for Lambda Function
   StitchLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Sub '/aws/lambda/urgd-stitch-svg-converter-${Environment}-${GitCommit}'
+      LogGroupName: !Sub '/aws/lambda/urgd-stitch-svg-converter-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
     DependsOn: StitchSvgConverterFunction
+
+  # Health Check Lambda Function
+  StitchHealthCheckFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'urgd-stitch-health-check-v1-${Environment}-${GitCommit}'
+      Runtime: python3.12
+      Handler: health_check.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: !Ref StitchFunctionCodeKey
+      MemorySize: 128
+      Timeout: 30
+      TracingConfig:
+        Mode: Active
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref StitchStorageBucket
+          ENVIRONMENT: !Ref Environment
+          VERSION: !Ref GitCommit
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # CloudWatch Log Group for Health Check Function
+  StitchHealthCheckLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/urgd-stitch-health-check-v1-${Environment}-${GitCommit}'
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+    DependsOn: StitchHealthCheckFunction
 
   # API Gateway REST API
   StitchApiGateway:
@@ -215,6 +332,12 @@ Resources:
           Value: urgd
         - Key: project
           Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # API Gateway Lambda Permission
   StitchApiGatewayPermission:
@@ -225,21 +348,46 @@ Resources:
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${StitchApiGateway}/*/*'
 
-  # API Gateway Resource for /convert path
-  StitchConvertResource:
+  # API Gateway Lambda Permission for Health Check
+  StitchHealthCheckApiGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref StitchHealthCheckFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${StitchApiGateway}/*/*'
+
+  # API Gateway Resource for /v1 path
+  StitchV1Resource:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId: !Ref StitchApiGateway
       ParentId: !GetAtt StitchApiGateway.RootResourceId
+      PathPart: v1
+
+  # API Gateway Resource for /v1/convert path
+  StitchConvertResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ParentId: !Ref StitchV1Resource
       PathPart: convert
 
-  # API Gateway Resource for /convert/svg path
+  # API Gateway Resource for /v1/convert/svg path
   StitchSvgResource:
     Type: AWS::ApiGateway::Resource
     Properties:
       RestApiId: !Ref StitchApiGateway
       ParentId: !Ref StitchConvertResource
       PathPart: svg
+
+  # API Gateway Resource for /v1/health path
+  StitchHealthResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ParentId: !Ref StitchV1Resource
+      PathPart: health
 
   # API Gateway Method for POST requests
   StitchSvgConverterMethod:
@@ -279,15 +427,56 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Access-Control-Allow-Methods: true
 
+  # API Gateway Method for GET /health
+  StitchHealthGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ResourceId: !Ref StitchHealthResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StitchHealthCheckFunction.Arn}/invocations'
+
+  # API Gateway Method for OPTIONS /health (CORS)
+  StitchHealthOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ResourceId: !Ref StitchHealthResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
   # API Gateway Deployment
   StitchApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
     DependsOn: 
       - StitchSvgConverterMethod
       - StitchSvgConverterOptionsMethod
+      - StitchHealthGetMethod
+      - StitchHealthOptionsMethod
     Properties:
       RestApiId: !Ref StitchApiGateway
       StageName: !Ref Environment
+      TracingEnabled: true
 
   # API Gateway Custom Domain
   StitchApiGatewayDomainName:
@@ -306,6 +495,12 @@ Resources:
           Value: urgd
         - Key: project
           Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # API Gateway Base Path Mapping
   StitchApiGatewayBasePathMapping:
@@ -330,6 +525,198 @@ Resources:
       AliasTarget:
         DNSName: !GetAtt StitchApiGatewayDomainName.RegionalDomainName
         HostedZoneId: !GetAtt StitchApiGatewayDomainName.RegionalHostedZoneId
+
+  # S3 Bucket for access logs
+  StitchAccessLogsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'urgd-stitch-access-logs-${Environment}-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteOldLogs
+            Status: Enabled
+            ExpirationInDays: 90
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # CloudTrail for audit logging
+  StitchCloudTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      TrailName: !Sub "urgd-stitch-${Environment}-trail"
+      S3BucketName: !Ref StitchAccessLogsBucket
+      S3KeyPrefix: "cloudtrail-logs/"
+      IncludeGlobalServiceEvents: false
+      IsMultiRegionTrail: false
+      IsLogging: true
+      EnableLogFileValidation: true
+      EventSelectors:
+        - ReadWriteType: All
+          IncludeManagementEvents: true
+          DataResources:
+            - Type: AWS::S3::Object
+              Values:
+                - !Sub "${StitchStorageBucket.Arn}/*"
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # SNS Topics for Alerting
+  StitchStandardAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "urgd-stitch-standard-alerts-${Environment}"
+      DisplayName: !Sub "urgd stitch - ${Environment} Standard Alerts"
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  StitchCriticalAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "urgd-stitch-critical-alerts-${Environment}"
+      DisplayName: !Sub "urgd stitch - ${Environment} Critical Alerts"
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  StitchStandardAlertsSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: email
+      TopicArn: !Ref StitchStandardAlertsTopic
+      Endpoint: !Ref MonitoringEmail
+
+  StitchCriticalAlertsSubscription:
+    Type: AWS::SNS::Subscription
+    Condition: EnableCriticalAlerts
+    Properties:
+      Protocol: email
+      TopicArn: !Ref StitchCriticalAlertsTopic
+      Endpoint: !Ref CriticalAlertsEmail
+
+  # CloudWatch Alarms
+  StitchLambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "urgd-stitch-lambda-errors-${Environment}"
+      AlarmDescription: "Lambda function errors for stitch converter"
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref StitchSvgConverterFunction
+      AlarmActions:
+        - !Ref StitchStandardAlertsTopic
+      OKActions:
+        - !Ref StitchStandardAlertsTopic
+
+  StitchLambdaDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "urgd-stitch-lambda-duration-${Environment}"
+      AlarmDescription: "Lambda function duration for stitch converter"
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 45000
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref StitchSvgConverterFunction
+      AlarmActions:
+        - !Ref StitchStandardAlertsTopic
+      OKActions:
+        - !Ref StitchStandardAlertsTopic
+
+  StitchApiGateway5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "urgd-stitch-api-5xx-errors-${Environment}"
+      AlarmDescription: "API Gateway 5xx errors for stitch"
+      MetricName: 5XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 10
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref StitchApiGateway
+      AlarmActions:
+        - !Ref StitchCriticalAlertsTopic
+      OKActions:
+        - !Ref StitchCriticalAlertsTopic
 
   # CloudFront Distribution
   StitchCloudFrontDistribution:
@@ -378,7 +765,7 @@ Resources:
           DefaultTTL: 86400
           MaxTTL: 31536000
         CacheBehaviors:
-          - PathPattern: '/convert/*'
+          - PathPattern: '/v1/convert/*'
             TargetOriginId: StitchApiOrigin
             ViewerProtocolPolicy: redirect-to-https
             AllowedMethods:
@@ -407,6 +794,12 @@ Resources:
           Value: urgd
         - Key: project
           Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # Route 53 Record for CloudFront
   StitchCloudFrontDnsRecord:
@@ -476,3 +869,22 @@ Outputs:
       - !Sub 'https://${Environment}.stitch.urgdstudios.com'
     Export:
       Name: !Sub '${AWS::StackName}-CustomWebsiteUrl'
+
+  # Monitoring Outputs
+  StandardAlertsTopicArn:
+    Description: "SNS Topic ARN for standard alerts"
+    Value: !Ref StitchStandardAlertsTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-StandardAlertsTopicArn"
+
+  CriticalAlertsTopicArn:
+    Description: "SNS Topic ARN for critical alerts"
+    Value: !Ref StitchCriticalAlertsTopic
+    Export:
+      Name: !Sub "${AWS::StackName}-CriticalAlertsTopicArn"
+
+  HealthCheckUrl:
+    Description: "Health check endpoint URL"
+    Value: !Sub 'https://${StitchApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/v1/health'
+    Export:
+      Name: !Sub "${AWS::StackName}-HealthCheckUrl"

@@ -51,9 +51,55 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "✅ Resolved VERSION: $VERSION"
 
-  deploy:
+  deploy-layer:
     runs-on: ubuntu-latest
     needs: version
+    outputs:
+      layer_version: ${{ steps.upload_layer.outputs.LAYER_VERSION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-west-2' }}
+      
+      - name: Build Lambda Layer
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          echo "🔨 Building Lambda layer for version: $VERSION"
+          
+          mkdir -p layer-build/python
+          pip install -r layers/svg-embroidery/requirements.txt -t layer-build/python/
+          
+          cd layer-build
+          zip -r ../svg-embroidery-layer-${VERSION}.zip python/
+          cd ..
+          
+          echo "✅ Layer built: svg-embroidery-layer-${VERSION}.zip"
+      
+      - name: Upload Layer to S3
+        id: upload_layer
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          aws s3 cp svg-embroidery-layer-${VERSION}.zip \
+            s3://urgd-applicationdata/stitch/layers/${VERSION}/svg-embroidery.zip \
+            --region us-west-2
+          
+          echo "LAYER_VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "✅ Layer uploaded to s3://urgd-applicationdata/stitch/layers/${VERSION}/svg-embroidery.zip"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [version, deploy-layer]
     
     steps:
     - name: Checkout code
@@ -123,6 +169,7 @@ jobs:
           {"ParameterKey": "Environment", "ParameterValue": "$env"},
           {"ParameterKey": "GitCommit", "ParameterValue": "$VERSION"},
           {"ParameterKey": "StitchFunctionCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/stitch-function-$VERSION.zip"},
+          {"ParameterKey": "StitchLayerCodeKey", "ParameterValue": "stitch/layers/$VERSION/svg-embroidery.zip"},
           {"ParameterKey": "AcmCertArnApiRegion", "ParameterValue": "arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935"},
           {"ParameterKey": "AcmCertArnCloudFront", "ParameterValue": "arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47"},
           {"ParameterKey": "UrgdDevHostedZoneId", "ParameterValue": "Z01725332W8W14423YXSC"},
@@ -331,12 +378,12 @@ jobs:
           --query 'Stacks[0].Outputs[?OutputKey==`WebsiteBucketName`].OutputValue' \
           --output text)
         
-        # Get the API Gateway URL from the stack and append /convert/svg path
+        # Get the API Gateway URL from the stack and append /v1/convert/svg path
         API_BASE_URL=$(aws cloudformation describe-stacks \
           --stack-name urgd-stitch-${{ env.ENVIRONMENT }} \
           --query 'Stacks[0].Outputs[?OutputKey==`ApiUrl`].OutputValue' \
           --output text)
-        API_URL="${API_BASE_URL}/convert/svg"
+        API_URL="${API_BASE_URL}/v1/convert/svg"
         
         echo "Uploading website to bucket: $WEBSITE_BUCKET"
         echo "API Gateway URL: $API_URL"
@@ -348,15 +395,15 @@ jobs:
         # Update the API URL in the website based on environment
         ENVIRONMENT="${{ env.ENVIRONMENT }}"
         if [ "$ENVIRONMENT" = "prod" ]; then
-          API_URL="https://api.stitch.urgd.dev/prod/convert/svg"
+          API_URL="https://api.stitch.urgd.dev/v1/convert/svg"
           WEBSITE_URL="https://stitch.urgdstudios.com"
         else
-          API_URL="https://api-${ENVIRONMENT}.stitch.urgd.dev/${ENVIRONMENT}/convert/svg"
+          API_URL="https://api-${ENVIRONMENT}.stitch.urgd.dev/v1/convert/svg"
           WEBSITE_URL="https://${ENVIRONMENT}.stitch.urgdstudios.com"
         fi
         
         # Replace the API URL in the HTML file
-        sed -i "s|https://api-dev.stitch.urgd.dev/dev/convert/svg|$API_URL|g" temp-website/index.html
+        sed -i "s|https://api-dev.stitch.urgd.dev/v1/convert/svg|$API_URL|g" temp-website/index.html
         
         # Replace Open Graph URLs for social media previews
         sed -i "s|content=\"\"|content=\"$WEBSITE_URL\"|g" temp-website/index.html
