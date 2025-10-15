@@ -523,9 +523,37 @@ Resources:
         - Key: cfn-stack-name
           Value: !Ref AWS::StackName
 
+  # S3 Bucket Policy for CloudTrail
+  StitchAccessLogsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref StitchAccessLogsBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !Sub "${StitchAccessLogsBucket.Arn}"
+            Condition:
+              StringEquals:
+                "AWS:SourceArn": !Sub "arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/urgd-stitch-${Environment}-trail"
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub "${StitchAccessLogsBucket.Arn}/cloudtrail-logs/*"
+            Condition:
+              StringEquals:
+                "s3:x-amz-acl": bucket-owner-full-control
+                "AWS:SourceArn": !Sub "arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/urgd-stitch-${Environment}-trail"
+
   # CloudTrail for audit logging
   StitchCloudTrail:
     Type: AWS::CloudTrail::Trail
+    DependsOn: StitchAccessLogsBucketPolicy
     Properties:
       TrailName: !Sub "urgd-stitch-${Environment}-trail"
       S3BucketName: !Ref StitchAccessLogsBucket
