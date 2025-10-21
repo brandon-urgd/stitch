@@ -238,7 +238,7 @@ jobs:
         mkdir -p "$BUILD_DIR"
         
         # Copy Lambda function files
-        cp -r lambda/* "$BUILD_DIR/"
+        cp -r lambdas/* "$BUILD_DIR/"
         
         # Install dependencies using pip
         cd "$BUILD_DIR"

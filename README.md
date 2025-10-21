@@ -41,7 +41,7 @@ The application uses a fully automated CI/CD pipeline:
 ### S3 Structure
 ```
 urgd-applicationdata/stitch/
-├── lambda/                    # Lambda deployment packages
+├── lambdas/                    # Lambda deployment packages
 │   └── lambda-prod-{commit}.zip
 ├── cloudformation/            # Infrastructure templates
 │   └── stitch-infrastructure.yaml
@@ -66,7 +66,7 @@ curl -X POST -F "file=@test-heart.svg" https://your-api-gateway-url/prod/api
 ### Adding New Formats
 The architecture supports easy addition of new embroidery formats:
 
-1. Update `lambda/svg_converter.py` with new format support
+1. Update `lambdas/svg_converter.py` with new format support
 2. Modify `website/index.html` to include format selection
 3. Push changes - automatic deployment handles the rest
 
@@ -87,7 +87,7 @@ stitch/
 │   └── deploy-cloudformation.yml    # CI/CD pipeline
 ├── cloudformation/
 │   └── stitch-infrastructure.yaml   # AWS infrastructure
-├── lambda/
+├── lambdas/
 │   ├── svg_converter.py             # Main conversion logic
 │   └── requirements.txt             # Python dependencies
 ├── website/
