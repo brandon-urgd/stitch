@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <!-- EICAR test string wrapped in SVG for malware testing -->
+  <!-- This file should be detected as malware by GuardDuty -->
+  
+  <defs>
+    <pattern id="malwarePattern" x="0" y="0" width="50" height="50" patternUnits="userSpaceOnUse">
+      <rect width="50" height="50" fill="none" stroke="red" stroke-width="1"/>
+    </pattern>
+  </defs>
+  
+  <!-- EICAR test string embedded as text -->
+  <text x="10" y="30" font-family="monospace" font-size="8" fill="black">
+    X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*
+  </text>
+  
+  <!-- Additional EICAR string in different location -->
+  <text x="10" y="50" font-family="Arial" font-size="6" fill="blue">
+    EICAR-Test-File-String-Here
+  </text>
+  
+  <!-- Visual elements to make it look like a real SVG -->
+  <rect x="20" y="80" width="160" height="100" fill="url(#malwarePattern)" stroke="red" stroke-width="2"/>
+  
+  <!-- Hidden text with EICAR string -->
+  <text x="0" y="0" font-size="1" fill="white" opacity="0">
+    X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*
+  </text>
+  
+  <!-- Comment with EICAR string -->
+  <!-- X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H* -->
+  
+  <!-- Title with EICAR reference -->
+  <title>EICAR Test File</title>
+  
+  <!-- Description with EICAR string -->
+  <desc>X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*</desc>
+</svg>

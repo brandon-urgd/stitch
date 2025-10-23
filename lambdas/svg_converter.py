@@ -11,7 +11,12 @@ import xml.etree.ElementTree as ET
 import math
 import re
 import struct
+import logging
 from typing import List, Tuple, Dict, Any, Optional
+
+# Set up logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 # SVG parsing and path handling
 try:
@@ -59,6 +64,7 @@ except ImportError:
     print("Warning: pyembroidery library not available, using fallback conversion")
 
 s3_client = boto3.client('s3')
+dynamodb = boto3.resource('dynamodb')
 BUCKET_NAME = os.environ.get('BUCKET_NAME', 'urgd-stitch-storage')
 
 # High quality settings for professional embroidery
@@ -79,10 +85,39 @@ PROFESSIONAL_SETTINGS = {
 
 def lambda_handler(event, context):
     """
-    Lambda handler for SVG to PES conversion API.
-    Handles file conversion on POST requests via API Gateway.
+    Lambda handler for SVG to PES conversion.
+    Supports both sync (API Gateway) and async (Shield callback) invocation.
     """
     
+    try:
+        # Check invocation source
+        if 'request_id' in event:
+            # Async invocation from shield_callback
+            logger.info("Async invocation from Shield callback")
+            return handle_async_conversion(event, context)
+        elif 'httpMethod' in event:
+            # Sync invocation from API Gateway (legacy)
+            logger.info("Sync invocation from API Gateway")
+            return handle_sync_conversion(event, context)
+        else:
+            logger.error(f"Unknown event structure: {json.dumps(event, default=str)}")
+            return {
+                'statusCode': 400,
+                'headers': get_cors_headers(),
+                'body': json.dumps({'error': 'Invalid event structure'})
+            }
+            
+    except Exception as e:
+        logger.error(f"Error in lambda_handler: {str(e)}")
+        logger.error(traceback.format_exc())
+        return {
+            'statusCode': 500,
+            'headers': get_cors_headers(),
+            'body': json.dumps({'error': 'Internal server error'})
+        }
+
+def handle_sync_conversion(event, context):
+    """Handle synchronous conversion from API Gateway (legacy)."""
     try:
         # Get HTTP method from API Gateway event structure
         http_method = event.get('httpMethod', 'GET')
@@ -112,13 +147,121 @@ def lambda_handler(event, context):
             }
             
     except Exception as e:
-        print(f"Error in lambda_handler: {str(e)}")
-        print(traceback.format_exc())
+        logger.error(f"Error in sync conversion: {str(e)}")
+        logger.error(traceback.format_exc())
         return {
             'statusCode': 500,
             'headers': get_cors_headers(),
             'body': json.dumps({'error': 'Internal server error'})
         }
+
+def handle_async_conversion(event, context):
+    """Handle asynchronous conversion from Shield callback."""
+    try:
+        request_id = event['request_id']
+        source_bucket = event['source_bucket']
+        source_key = event['source_key']
+        
+        logger.info(f"Processing async conversion for request: {request_id}")
+        logger.info(f"Source: {source_bucket}/{source_key}")
+        
+        # Update status to converting
+        update_status(request_id, 'converting')
+        
+        # Download SVG from processing bucket
+        logger.info(f"Downloading SVG from {source_bucket}/{source_key}")
+        svg_obj = s3_client.get_object(Bucket=source_bucket, Key=source_key)
+        svg_content = svg_obj['Body'].read().decode('utf-8')
+        
+        logger.info(f"Downloaded SVG content ({len(svg_content)} chars)")
+        
+        # Convert SVG to PES (existing logic)
+        logger.info("Starting SVG to PES conversion")
+        pes_content = convert_svg_to_pes(svg_content)
+        
+        if not pes_content:
+            raise Exception("Conversion failed - no PES content generated")
+        
+        logger.info(f"Conversion complete, PES size: {len(pes_content)} bytes")
+        
+        # Save to converted bucket
+        pes_key = f"converted/{request_id}.pes"
+        s3_client.put_object(
+            Bucket=BUCKET_NAME,
+            Key=pes_key,
+            Body=pes_content,
+            ContentType='application/octet-stream'
+        )
+        
+        logger.info(f"PES file saved to {BUCKET_NAME}/{pes_key}")
+        
+        # Count stitches and assess quality
+        stitch_count = count_stitches_in_pes(pes_content)
+        quality = assess_embroidery_quality(stitch_count, pes_content)
+        
+        logger.info(f"Quality assessment: {quality['level']}, {stitch_count} stitches")
+        
+        # Update status to complete
+        update_status(request_id, 'converted', {
+            'pes_key': pes_key,
+            'stitch_count': stitch_count,
+            'quality': quality['level']
+        })
+        
+        # Clean up processing bucket
+        s3_client.delete_object(Bucket=source_bucket, Key=source_key)
+        logger.info(f"Cleaned up processing file: {source_key}")
+        
+        return {'statusCode': 200, 'body': 'Conversion complete'}
+        
+    except Exception as e:
+        logger.error(f"Async conversion failed: {str(e)}")
+        logger.error(traceback.format_exc())
+        
+        # Update status to failed
+        if 'request_id' in event:
+            update_status(event['request_id'], 'failed', {'error': str(e)})
+        
+        raise
+
+def update_status(request_id, status, additional_data=None):
+    """Update conversion status in DynamoDB."""
+    try:
+        table_name = os.environ.get('STATUS_TABLE_NAME')
+        if not table_name:
+            logger.warning("STATUS_TABLE_NAME not set, skipping status update")
+            return
+        
+        table = dynamodb.Table(table_name)
+        
+        update_expression = 'SET #status = :status, #timestamp = :timestamp'
+        expression_attribute_names = {
+            '#status': 'status',
+            '#timestamp': 'timestamp'
+        }
+        expression_attribute_values = {
+            ':status': status,
+            ':timestamp': datetime.utcnow().isoformat()
+        }
+        
+        if additional_data:
+            for key, value in additional_data.items():
+                update_expression += f', #{key} = :{key}'
+                expression_attribute_names[f'#{key}'] = key
+                expression_attribute_values[f':{key}'] = value
+        
+        table.update_item(
+            Key={'request_id': request_id},
+            UpdateExpression=update_expression,
+            ExpressionAttributeNames=expression_attribute_names,
+            ExpressionAttributeValues=expression_attribute_values
+        )
+        
+        logger.info(f"Updated status for {request_id}: {status}")
+        
+    except Exception as e:
+        logger.error(f"Failed to update status: {str(e)}")
+        # Don't fail the conversion if status update fails
 
 def handle_conversion(event, context):
     """Handle SVG to PES file conversion."""

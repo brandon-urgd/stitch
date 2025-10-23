@@ -506,62 +506,117 @@
             }
         });
         
-        // Convert button handler
+        // Convert button handler - now uses Shield integration
         convertBtn.addEventListener('click', async () => {
             if (!selectedFile) return;
             
             convertBtn.disabled = true;
-            convertBtn.innerHTML = '<span class="loading"></span>Converting...';
+            convertBtn.innerHTML = '<span class="loading"></span>Preparing...';
             progressContainer.style.display = 'block';
             hideMessages();
             
-            // Simulate progress
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-                progress += Math.random() * 15;
-                if (progress > 90) progress = 90;
-                progressFill.style.width = progress + '%';
-                progressText.textContent = `Converting... ${Math.round(progress)}%`;
-            }, 200);
-            
             try {
-                const formData = new FormData();
-                formData.append('file', selectedFile);
+                await handleFileUpload(selectedFile);
+            } catch (error) {
+                showError('Upload failed: ' + error.message);
+            } finally {
+                convertBtn.disabled = false;
+                convertBtn.innerHTML = 'Convert to PES';
+            }
+        });
+        
+        // New Shield integration upload handler
+        async function handleFileUpload(file) {
+            try {
+                // Step 1: Get presigned URL
+                showStatus('Preparing upload...');
+                const apiBaseUrl = environment === 'prod' 
+                    ? `https://api.stitch.urgd.dev`
+                    : `https://api-${environment}.stitch.urgd.dev`;
                 
-                // Use the environment-aware API Gateway endpoint for conversion
-                const apiUrl = environment === 'prod' 
-                    ? `https://api.stitch.urgd.dev/v1/convert/svg`
-                    : `https://api-${environment}.stitch.urgd.dev/v1/convert/svg`;
-                const response = await fetch(apiUrl, {
+                const urlResponse = await fetch(`${apiBaseUrl}/v1/upload-url`);
+                if (!urlResponse.ok) {
+                    throw new Error(`Failed to get upload URL: ${urlResponse.status}`);
+                }
+                const urlData = await urlResponse.json();
+                
+                // Step 2: Upload directly to Shield S3
+                showStatus('Uploading file for security scan...');
+                const formData = new FormData();
+                Object.entries(urlData.fields).forEach(([key, value]) => {
+                    formData.append(key, value);
+                });
+                formData.append('file', file);
+                
+                const uploadResponse = await fetch(urlData.upload_url, {
                     method: 'POST',
                     body: formData
                 });
                 
-                const result = await response.json();
-                clearInterval(progressInterval);
-                progressFill.style.width = '100%';
-                progressText.textContent = 'Complete!';
-                
-                if (result.success) {
-                    downloadBtn.href = result.downloadUrl;
-                    downloadBtn.download = selectedFile.name.replace('.svg', '.pes');
-                    downloadArea.style.display = 'block';
-                    showSuccess('File converted successfully!');
-                } else {
-                    showError('Conversion failed: ' + (result.error || 'Unknown error'));
+                if (!uploadResponse.ok) {
+                    throw new Error(`Upload failed: ${uploadResponse.status}`);
                 }
+                
+                // Step 3: Poll for status
+                const requestId = urlData.request_id;
+                showStatus('Scanning and converting...');
+                
+                const result = await pollConversionStatus(requestId, apiBaseUrl);
+                
+                if (result.status === 'ready') {
+                    downloadBtn.href = result.download_url;
+                    downloadBtn.download = file.name.replace('.svg', '.pes');
+                    downloadArea.style.display = 'block';
+                    showSuccess(`Conversion complete! ${result.stitch_count} stitches, ${result.quality} quality`);
+                } else if (result.status === 'infected') {
+                    showError('File rejected: Malware detected');
+                } else {
+                    showError('Conversion failed: ' + (result.message || 'Unknown error'));
+                }
+                
             } catch (error) {
-                clearInterval(progressInterval);
-                showError('Error: ' + error.message);
-            } finally {
-                convertBtn.disabled = false;
-                convertBtn.innerHTML = 'Convert to PES';
-                setTimeout(() => {
-                    progressContainer.style.display = 'none';
-                    progressFill.style.width = '0%';
-                }, 2000);
+                showError('Upload failed: ' + error.message);
             }
-        });
+        }
+        
+        // Status polling function
+        async function pollConversionStatus(requestId, apiBaseUrl, maxAttempts = 60) {
+            for (let i = 0; i < maxAttempts; i++) {
+                await sleep(2000); // Poll every 2 seconds
+                
+                const response = await fetch(`${apiBaseUrl}/v1/status/${requestId}`);
+                if (!response.ok) {
+                    throw new Error(`Status check failed: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                if (data.status === 'ready' || data.status === 'infected') {
+                    return data;
+                }
+                
+                // Update progress message
+                if (data.status === 'scanning') {
+                    showStatus('Scanning for malware...');
+                } else if (data.status === 'converting') {
+                    showStatus('Converting SVG to embroidery format...');
+                } else {
+                    showStatus(`Processing... (${data.status})`);
+                }
+            }
+            
+            throw new Error('Conversion timeout - please try again');
+        }
+        
+        // Helper function for status display
+        function showStatus(message) {
+            progressText.textContent = message;
+            progressFill.style.width = '50%'; // Show some progress during processing
+        }
+        
+        // Sleep helper function
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
         
         function showError(message) {
             errorMessage.textContent = message;

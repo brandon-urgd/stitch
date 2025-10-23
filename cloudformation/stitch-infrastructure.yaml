@@ -26,6 +26,22 @@ Parameters:
     Default: 'stitch/layers/latest/svg-embroidery.zip'
     Description: 'S3 key for SVG Embroidery Lambda Layer'
   
+  # Shield Integration Lambda Code Keys
+  UploadUrlGeneratorCodeKey:
+    Type: String
+    Default: 'stitch/artifacts/latest/upload-url-generator-latest.zip'
+    Description: 'S3 key for Upload URL Generator Lambda function code'
+  
+  StatusCheckerCodeKey:
+    Type: String
+    Default: 'stitch/artifacts/latest/status-checker-latest.zip'
+    Description: 'S3 key for Status Checker Lambda function code'
+  
+  ShieldCallbackCodeKey:
+    Type: String
+    Default: 'stitch/artifacts/latest/shield-callback-latest.zip'
+    Description: 'S3 key for Shield Callback Lambda function code'
+  
   GitCommit:
     Type: String
     Default: 'latest'
@@ -63,6 +79,22 @@ Parameters:
     Type: String
     Default: 'Z0338626TGE7PTZDLIT1'
     Description: 'Route 53 Hosted Zone ID for urgdstudios.com'
+
+  # Shield Integration Parameters
+  ShieldBucketName:
+    Type: String
+    Default: '{{resolve:ssm:/urgd/shield/quarantine_bucket_name}}'
+    Description: 'Shield quarantine bucket name from SSM Parameter Store'
+
+  ShieldBucketArn:
+    Type: String
+    Default: '{{resolve:ssm:/urgd/shield/quarantine_bucket_arn}}'
+    Description: 'Shield quarantine bucket ARN from SSM Parameter Store'
+
+  ShieldEventBridgeRuleArn:
+    Type: String
+    Default: '{{resolve:ssm:/urgd/shield/eventbridge_rule_arn}}'
+    Description: 'Shield EventBridge rule ARN from SSM Parameter Store'
 
 # Conditions
 Conditions:
@@ -104,6 +136,101 @@ Resources:
         - Key: cfn-stack-name
           Value: !Ref AWS::StackName
 
+  # S3 Bucket for Shield processing (clean files from Shield)
+  StitchProcessingBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'urgd-stitch-processing-${Environment}-${AWS::AccountId}'
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteProcessedFiles
+            Status: Enabled
+            ExpirationInDays: 1
+            Prefix: 'processing/'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # KMS Key for DynamoDB encryption
+  DynamoDBKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub 'KMS key for DynamoDB encryption - Stitch ${Environment}'
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+          - Sid: Allow DynamoDB service
+            Effect: Allow
+            Principal:
+              Service: dynamodb.amazonaws.com
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+            Resource: '*'
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # DynamoDB Table for conversion status tracking
+  ConversionStatusTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'urgd-stitch-conversion-status-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: request_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: request_id
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      SSESpecification:
+        SSEEnabled: true
+        SSEType: KMS
+        KMSMasterKeyId: !Ref DynamoDBKMSKey
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
   # IAM Role for Lambda function
   LambdaExecutionRole:
     Type: AWS::IAM::Role
@@ -128,11 +255,27 @@ Resources:
                   - s3:GetObject
                   - s3:PutObject
                   - s3:DeleteObject
-                Resource: !Sub 'arn:aws:s3:::${StitchStorageBucket}/*'
+                Resource: 
+                  - !Sub '${StitchStorageBucket.Arn}/*'
+                  - !Sub '${StitchProcessingBucket.Arn}/*'
               - Effect: Allow
                 Action:
                   - s3:ListBucket
-                Resource: !Sub 'arn:aws:s3:::${StitchStorageBucket}'
+                Resource: 
+                  - !Sub 'arn:aws:s3:::${StitchStorageBucket}'
+                  - !GetAtt StitchProcessingBucket.Arn
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: !GetAtt ConversionStatusTable.Arn
       Tags:
         - Key: brand
           Value: urgd
@@ -232,6 +375,8 @@ Resources:
           BUCKET_NAME: !Ref StitchStorageBucket
           ENVIRONMENT: !Ref Environment
           VERSION: !Ref GitCommit
+      DeadLetterConfig:
+        TargetArn: !GetAtt StitchLambdaDLQ.Arn
       Tags:
         - Key: brand
           Value: urgd
@@ -244,12 +389,84 @@ Resources:
         - Key: cfn-stack-name
           Value: !Ref AWS::StackName
 
+  # KMS Key for encryption
+  StitchKmsKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: !Sub "KMS key for urgd-stitch-${Environment}"
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
+            Action: kms:*
+            Resource: '*'
+          - Sid: Allow CloudWatch Logs
+            Effect: Allow
+            Principal:
+              Service: logs.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              ArnEquals:
+                'kms:EncryptionContext:aws:logs:arn': !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+          - Sid: Allow CloudTrail
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:EncryptionContext:aws:cloudtrail:arn': !Sub "arn:aws:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/urgd-stitch-${Environment}-trail"
+          - Sid: Allow SNS
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:ReEncrypt*
+              - kms:GenerateDataKey*
+              - kms:DescribeKey
+            Resource: '*'
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  StitchKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/urgd-stitch-${Environment}"
+      TargetKeyId: !Ref StitchKmsKey
+
   # CloudWatch Log Group for Lambda Function
   StitchLambdaLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-svg-converter-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      KmsKeyId: !Ref StitchKmsKey
     DependsOn: StitchSvgConverterFunction
 
   # Health Check Lambda Function
@@ -273,6 +490,8 @@ Resources:
           BUCKET_NAME: !Ref StitchStorageBucket
           ENVIRONMENT: !Ref Environment
           VERSION: !Ref GitCommit
+      DeadLetterConfig:
+        TargetArn: !GetAtt StitchLambdaDLQ.Arn
       Tags:
         - Key: brand
           Value: urgd
@@ -291,7 +510,27 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-health-check-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      KmsKeyId: !Ref StitchKmsKey
     DependsOn: StitchHealthCheckFunction
+
+  # Dead Letter Queue for Lambda functions
+  StitchLambdaDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "urgd-stitch-lambda-dlq-${Environment}"
+      MessageRetentionPeriod: 1209600  # 14 days
+      KmsMasterKeyId: !Ref StitchKmsKey
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
 
   # API Gateway REST API
   StitchApiGateway:
@@ -330,6 +569,23 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !Ref StitchHealthCheckFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${StitchApiGateway}/*/*'
+
+  # Lambda Permissions for Shield Integration API Gateway Endpoints
+  StitchUploadUrlApiGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref UploadUrlGeneratorFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${StitchApiGateway}/*/*'
+
+  StitchStatusApiGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref StatusCheckerFunction
       Action: lambda:InvokeFunction
       Principal: apigateway.amazonaws.com
       SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${StitchApiGateway}/*/*'
@@ -442,6 +698,110 @@ Resources:
             method.response.header.Access-Control-Allow-Origin: true
             method.response.header.Access-Control-Allow-Methods: true
 
+  # ===========================================
+  # SHIELD INTEGRATION API GATEWAY ENDPOINTS
+  # ===========================================
+
+  # API Gateway Resource for /v1/upload-url path
+  StitchUploadUrlResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ParentId: !Ref StitchV1Resource
+      PathPart: upload-url
+
+  # API Gateway Method for GET /v1/upload-url
+  StitchUploadUrlGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ResourceId: !Ref StitchUploadUrlResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UploadUrlGeneratorFunction.Arn}/invocations'
+
+  # API Gateway Method for OPTIONS /v1/upload-url (CORS)
+  StitchUploadUrlOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ResourceId: !Ref StitchUploadUrlResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+  # API Gateway Resource for /v1/status path
+  StitchStatusResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ParentId: !Ref StitchV1Resource
+      PathPart: status
+
+  # API Gateway Resource for /v1/status/{request_id} path
+  StitchStatusRequestIdResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ParentId: !Ref StitchStatusResource
+      PathPart: '{request_id}'
+
+  # API Gateway Method for GET /v1/status/{request_id}
+  StitchStatusGetMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ResourceId: !Ref StitchStatusRequestIdResource
+      HttpMethod: GET
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StatusCheckerFunction.Arn}/invocations'
+
+  # API Gateway Method for OPTIONS /v1/status/{request_id} (CORS)
+  StitchStatusOptionsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref StitchApiGateway
+      ResourceId: !Ref StitchStatusRequestIdResource
+      HttpMethod: OPTIONS
+      AuthorizationType: NONE
+      Integration:
+        Type: MOCK
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Methods: true
+
   # API Gateway Deployment
   StitchApiGatewayDeployment:
     Type: AWS::ApiGateway::Deployment
@@ -450,6 +810,10 @@ Resources:
       - StitchSvgConverterOptionsMethod
       - StitchHealthGetMethod
       - StitchHealthOptionsMethod
+      - StitchUploadUrlGetMethod
+      - StitchUploadUrlOptionsMethod
+      - StitchStatusGetMethod
+      - StitchStatusOptionsMethod
     Properties:
       RestApiId: !Ref StitchApiGateway
       StageName: !Ref Environment
@@ -564,10 +928,11 @@ Resources:
       TrailName: !Sub "urgd-stitch-${Environment}-trail"
       S3BucketName: !Ref StitchAccessLogsBucket
       S3KeyPrefix: "cloudtrail-logs/"
-      IncludeGlobalServiceEvents: false
-      IsMultiRegionTrail: false
+      IncludeGlobalServiceEvents: true
+      IsMultiRegionTrail: true
       IsLogging: true
       EnableLogFileValidation: true
+      KMSKeyId: !Ref StitchKmsKey
       EventSelectors:
         - ReadWriteType: All
           IncludeManagementEvents: true
@@ -593,6 +958,7 @@ Resources:
     Properties:
       TopicName: !Sub "urgd-stitch-standard-alerts-${Environment}"
       DisplayName: !Sub "urgd stitch - ${Environment} Standard Alerts"
+      KmsMasterKeyId: !Ref StitchKmsKey
       Tags:
         - Key: brand
           Value: urgd
@@ -610,6 +976,7 @@ Resources:
     Properties:
       TopicName: !Sub "urgd-stitch-critical-alerts-${Environment}"
       DisplayName: !Sub "urgd stitch - ${Environment} Critical Alerts"
+      KmsMasterKeyId: !Ref StitchKmsKey
       Tags:
         - Key: brand
           Value: urgd
@@ -794,6 +1161,425 @@ Resources:
       AliasTarget:
         DNSName: !GetAtt StitchCloudFrontDistribution.DomainName
         HostedZoneId: Z2FDTNDATAQYW2
+
+  # ===========================================
+  # SHIELD INTEGRATION RESOURCES
+  # ===========================================
+
+  # IAM Role for Upload URL Generator Lambda
+  UploadUrlGeneratorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'urgd-stitch-upload-url-generator-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: UploadUrlGeneratorPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource:
+                  - "arn:aws:ssm:us-west-2:*:parameter/urgd/shield/*"
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                Resource: !GetAtt ConversionStatusTable.Arn
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # Upload URL Generator Lambda Function
+  UploadUrlGeneratorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'urgd-stitch-upload-url-generator-${Environment}-${GitCommit}'
+      Runtime: python3.12
+      Handler: upload_url_generator.lambda_handler
+      Role: !GetAtt UploadUrlGeneratorRole.Arn
+      Code:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: !Ref UploadUrlGeneratorCodeKey
+      MemorySize: 256
+      Timeout: 30
+      ReservedConcurrentExecutions: 10
+      TracingConfig:
+        Mode: Active
+      Environment:
+        Variables:
+          STITCH_PROCESSING_BUCKET: !Ref StitchProcessingBucket
+          STATUS_TABLE_NAME: !Ref ConversionStatusTable
+          ENVIRONMENT: !Ref Environment
+          VERSION: !Ref GitCommit
+      DeadLetterConfig:
+        TargetArn: !GetAtt StitchLambdaDLQ.Arn
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # IAM Role for Status Checker Lambda
+  StatusCheckerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'urgd-stitch-status-checker-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: StatusCheckerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                Resource: !GetAtt ConversionStatusTable.Arn
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub '${StitchStorageBucket}/*'
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # Status Checker Lambda Function
+  StatusCheckerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'urgd-stitch-status-checker-${Environment}-${GitCommit}'
+      Runtime: python3.12
+      Handler: status_checker.lambda_handler
+      Role: !GetAtt StatusCheckerRole.Arn
+      Code:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: !Ref StatusCheckerCodeKey
+      MemorySize: 256
+      Timeout: 30
+      ReservedConcurrentExecutions: 10
+      TracingConfig:
+        Mode: Active
+      Environment:
+        Variables:
+          STATUS_TABLE_NAME: !Ref ConversionStatusTable
+          STITCH_STORAGE_BUCKET: !Ref StitchStorageBucket
+          ENVIRONMENT: !Ref Environment
+          VERSION: !Ref GitCommit
+      DeadLetterConfig:
+        TargetArn: !GetAtt StitchLambdaDLQ.Arn
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # IAM Role for Shield Callback Lambda
+  ShieldCallbackRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'urgd-stitch-shield-callback-role-${Environment}'
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/urgd-shield-upload-policy-prod'
+      Policies:
+        - PolicyName: ShieldCallbackPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:DeleteObject
+                Resource:
+                  - !Sub '${ShieldBucketArn}/*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub '${StitchProcessingBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !Ref ShieldBucketArn
+                  - !GetAtt StitchProcessingBucket.Arn
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                Resource: !GetAtt ConversionStatusTable.Arn
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource: !GetAtt StitchSvgConverterFunction.Arn
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                Resource:
+                  - "arn:aws:ssm:us-west-2:*:parameter/urgd/shield/*"
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # Shield Callback Lambda Function
+  ShieldCallbackFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'urgd-stitch-shield-callback-${Environment}-${GitCommit}'
+      Runtime: python3.12
+      Handler: shield_callback.lambda_handler
+      Role: !GetAtt ShieldCallbackRole.Arn
+      Code:
+        S3Bucket: 'urgd-applicationdata'
+        S3Key: !Ref ShieldCallbackCodeKey
+      MemorySize: 512
+      Timeout: 300
+      ReservedConcurrentExecutions: 5
+      TracingConfig:
+        Mode: Active
+      Environment:
+        Variables:
+          SHIELD_BUCKET_NAME: !Ref ShieldBucketName
+          STITCH_PROCESSING_BUCKET: !Ref StitchProcessingBucket
+          CONVERTER_LAMBDA_ARN: !GetAtt StitchSvgConverterFunction.Arn
+          STATUS_TABLE_NAME: !Ref ConversionStatusTable
+          ENVIRONMENT: !Ref Environment
+          VERSION: !Ref GitCommit
+      DeadLetterConfig:
+        TargetArn: !GetAtt StitchLambdaDLQ.Arn
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+  # EventBridge Permission for Shield Callback Lambda
+  ShieldEventBridgePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref ShieldCallbackFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !Ref ShieldEventBridgeRuleArn
+
+  # EventBridge Rule Target for Shield Callback
+  ShieldEventBridgeTarget:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Sub 'urgd-stitch-shield-callback-${Environment}'
+      Description: "Route Shield scan results to Stitch callback Lambda"
+      EventPattern:
+        source: ["aws.guardduty"]
+        detail-type: ["GuardDuty Finding"]
+        detail:
+          type: ["Malware:S3/Threat"]
+          resource:
+            s3BucketDetails:
+              - name: 
+                  - prefix: !Ref ShieldBucketName
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt ShieldCallbackFunction.Arn
+          Id: "ShieldCallbackTarget"
+          InputTransformer:
+            InputPathsMap:
+              scanStatus: "$.detail.service.additionalInfo.scanStatus"
+              bucketName: "$.detail.resource.s3BucketDetails[0].name"
+              objectKey: "$.detail.resource.s3ObjectDetails[0].key"
+              timestamp: "$.time"
+            InputTemplate: |
+              {
+                "detail": {
+                  "scanResult": <scanStatus>,
+                  "s3ObjectArn": "arn:aws:s3:::<bucketName>/<objectKey>",
+                  "timestamp": <timestamp>
+                }
+              }
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cfn-stack-name
+          Value: !Ref AWS::StackName
+
+
+  # CloudWatch Log Groups for Shield Integration Lambdas
+  UploadUrlGeneratorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/urgd-stitch-upload-url-generator-${Environment}-${GitCommit}'
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      KmsKeyId: !Ref StitchKmsKey
+    DependsOn: UploadUrlGeneratorFunction
+
+  StatusCheckerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/urgd-stitch-status-checker-${Environment}-${GitCommit}'
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      KmsKeyId: !Ref StitchKmsKey
+    DependsOn: StatusCheckerFunction
+
+  ShieldCallbackLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/urgd-stitch-shield-callback-${Environment}-${GitCommit}'
+      RetentionInDays: !If [IsProdEnvironment, 30, 7]
+      KmsKeyId: !Ref StitchKmsKey
+    DependsOn: ShieldCallbackFunction
+
+  # CloudWatch Alarms for Shield Integration
+  ShieldCallbackErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'urgd-stitch-shield-callback-errors-${Environment}'
+      AlarmDescription: 'Shield callback Lambda errors'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ShieldCallbackFunction
+      AlarmActions:
+        - !Ref StitchStandardAlertsTopic
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+
+  ConversionDelayAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'urgd-stitch-conversion-delays-${Environment}'
+      AlarmDescription: 'Conversions taking longer than 10 minutes'
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 600000  # 10 minutes in milliseconds
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref StitchSvgConverterFunction
+      AlarmActions:
+        - !Ref StitchStandardAlertsTopic
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
+
+  InfectedFileDetectedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'urgd-stitch-infected-files-${Environment}'
+      AlarmDescription: 'Malware detected in uploaded files'
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref ShieldCallbackFunction
+      AlarmActions:
+        - !Ref StitchCriticalAlertsTopic
+      Tags:
+        - Key: brand
+          Value: urgd
+        - Key: project
+          Value: stitch
+        - Key: studio
+          Value: Vault
+        - Key: environment
+          Value: !Ref Environment
 
 Outputs:
   WebsiteUrl:

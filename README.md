@@ -19,6 +19,9 @@ Simply upload an SVG file and get a perfectly formatted PES file for your embroi
 - **Instant Download** - Get your PES file immediately after conversion
 - **Mobile Friendly** - Responsive design works on all devices
 - **ur/gd Branding** - Professional design with ur/gd visual identity
+- **🛡️ Malware Protection** - Automatic virus scanning with AWS GuardDuty
+- **🔒 Secure Uploads** - Direct-to-S3 uploads with presigned URLs
+- **⚡ Fast Processing** - Event-driven architecture for optimal performance
 
 ## 🏗️ Architecture
 
@@ -27,6 +30,33 @@ Simply upload an SVG file and get a perfectly formatted PES file for your embroi
 - **API**: API Gateway for secure file processing
 - **Storage**: S3 buckets for temporary files and converted outputs
 - **Security**: Origin Access Control (OAC) for secure S3 access
+- **🛡️ Shield Integration**: AWS GuardDuty malware scanning with EventBridge
+- **🔒 Secure Uploads**: Presigned URL direct-to-S3 uploads
+- **⚡ Event-Driven**: Async processing with real-time status updates
+
+## 🛡️ Shield Integration
+
+Stitch now includes enterprise-grade malware protection through AWS GuardDuty integration:
+
+### How It Works
+1. **Secure Upload**: Files upload directly to Shield quarantine bucket via presigned URLs
+2. **Automatic Scanning**: GuardDuty scans files for malware (30-90 seconds)
+3. **Event Processing**: Clean files proceed to conversion, infected files are rejected
+4. **Real-time Status**: Frontend polls for conversion status with progress updates
+5. **Automatic Cleanup**: Files are removed from quarantine after processing
+
+### Security Features
+- **Zero-touch Malware**: Infected files never touch Lambda compute
+- **Real-time Detection**: EICAR and other malware patterns detected instantly
+- **Automatic Rejection**: Malware files deleted immediately after detection
+- **Audit Trail**: All security events logged to CloudWatch
+- **Compliance Ready**: SOC 2, GDPR, and HIPAA compatible
+
+### API Endpoints
+- `GET /v1/upload-url` - Generate presigned upload URL
+- `GET /v1/status/{request_id}` - Check conversion status
+
+For detailed integration documentation, see [docs/SHIELD_INTEGRATION.md](docs/SHIELD_INTEGRATION.md).
 
 ## 🚀 Deployment
 
@@ -87,9 +117,20 @@ stitch/
 │   └── deploy-cloudformation.yml    # CI/CD pipeline
 ├── cloudformation/
 │   └── stitch-infrastructure.yaml   # AWS infrastructure
+├── docs/
+│   ├── SHIELD_INTEGRATION.md        # Shield integration guide
+│   └── API.md                       # API documentation
 ├── lambdas/
 │   ├── svg_converter.py             # Main conversion logic
+│   ├── upload_url_generator.py      # Presigned URL generation
+│   ├── status_checker.py            # Status polling endpoint
+│   ├── shield_callback.py           # GuardDuty event processor
 │   └── requirements.txt             # Python dependencies
+├── tests/
+│   ├── test_presigned_upload.py     # Upload functionality tests
+│   ├── test_shield_integration.py   # Integration tests
+│   ├── fixtures/                    # Test SVG files
+│   └── requirements.txt             # Test dependencies
 ├── website/
 │   ├── index.html                   # Frontend interface
 │   └── assets/                      # Fonts, logos, etc.
@@ -102,9 +143,17 @@ stitch/
 
 - **CloudFront Distribution**: Global CDN for fast website delivery
 - **S3 Website Bucket**: Static website hosting
-- **S3 Storage Bucket**: Temporary file storage
-- **Lambda Function**: SVG to PES conversion engine
+- **S3 Storage Bucket**: Converted PES file storage
+- **S3 Processing Bucket**: Temporary storage for clean files
+- **Lambda Functions**: 
+  - SVG to PES conversion engine
+  - Presigned URL generator
+  - Status checker
+  - Shield callback processor
 - **API Gateway**: RESTful API for file processing
+- **DynamoDB Table**: Conversion status tracking
+- **EventBridge Rule**: GuardDuty event routing
+- **GuardDuty**: Malware scanning service
 - **IAM Roles**: Secure permissions for all services
 
 ## 🎨 ur/gd Branding
@@ -124,6 +173,11 @@ stitch/
 - **File Cleanup**: Automatic temporary file deletion
 - **CORS Support**: Proper cross-origin headers
 - **HTTPS Only**: All traffic encrypted
+- **🛡️ Malware Protection**: AWS GuardDuty real-time virus scanning
+- **🔒 Secure Uploads**: Presigned URL direct-to-S3 uploads
+- **⚡ Zero-touch Security**: Malware never touches application compute
+- **📊 Audit Trail**: Complete security event logging
+- **🔄 Automatic Cleanup**: Infected files deleted immediately
 
 ## 📊 Performance
 

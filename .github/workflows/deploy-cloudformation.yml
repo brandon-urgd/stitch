@@ -51,9 +51,116 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
           echo "✅ Resolved VERSION: $VERSION"
 
-  deploy-layer:
+  security-checks:
     runs-on: ubuntu-latest
     needs: version
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install cfn-lint
+        run: pip install cfn-lint
+
+      - name: Install Checkov
+        run: pip install checkov
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
+      - name: Lint CloudFormation
+        run: |
+          echo "🔍 Running CloudFormation linting..."
+          echo "Running: cfn-lint cloudformation/*.yaml --ignore-checks W3045"
+          
+          if cfn-lint cloudformation/*.yaml --ignore-checks W3045 2>&1; then
+            echo "✅ CloudFormation linting passed"
+          else
+            echo "❌ CloudFormation linting failed"
+            echo "🔍 Full cfn-lint output:"
+            cfn-lint cloudformation/*.yaml --ignore-checks W3045
+            exit 1
+          fi
+
+      - name: Run Checkov Security Scan
+        run: |
+          echo "🔍 Running Checkov security scan..."
+          echo "Checking for CloudFormation files..."
+          ls -la cloudformation/
+          
+          # Run Checkov with approved exceptions and capture both stdout and stderr
+          checkov -f cloudformation/stitch-infrastructure.yaml --framework cloudformation --output cli --output-file-path /tmp/checkov-results.txt --skip-check CKV_AWS_18,CKV_AWS_21,CKV_AWS_53,CKV_AWS_54,CKV_AWS_55,CKV_AWS_56,CKV_AWS_117,CKV_AWS_59,CKV_AWS_86,CKV_AWS_68 2>&1 | tee /tmp/checkov-output.txt
+          CHECKOV_EXIT_CODE=${PIPESTATUS[0]}
+          
+          echo "Checkov exit code: $CHECKOV_EXIT_CODE"
+          
+          # Check if there are any failures in the results
+          if [ -f /tmp/checkov-results.txt ]; then
+            if grep -q "FAILED" /tmp/checkov-results.txt; then
+              echo "❌ Checkov security scan found issues"
+              echo "🔍 Checkov results:"
+              cat /tmp/checkov-results.txt
+              echo ""
+              echo "🔍 Checkov output:"
+              cat /tmp/checkov-output.txt
+              exit 1
+            else
+              echo "✅ Checkov security scan passed"
+            fi
+          else
+            echo "✅ Checkov security scan passed (no results file generated)"
+          fi
+
+      - name: Run Semgrep Security Scan
+        run: |
+          echo "🔍 Running Semgrep security scan..."
+          semgrep --config=auto --json --output=/tmp/semgrep-results.json .
+          
+          # Check if there are any findings
+          if [ -s /tmp/semgrep-results.json ]; then
+            findings=$(jq '.results | length' /tmp/semgrep-results.json)
+            if [ "$findings" -gt 0 ]; then
+              echo "❌ Semgrep found $findings security issues"
+              echo "🔍 Semgrep results:"
+              cat /tmp/semgrep-results.json
+              exit 1
+            else
+              echo "✅ Semgrep security scan passed"
+            fi
+          else
+            echo "✅ Semgrep security scan passed"
+          fi
+
+      - name: Validate S3 ACLs
+        run: |
+          echo "Checking S3 bucket ACLs (should be private)..."
+          if grep -r "AWS::S3::Bucket" cloudformation/; then
+            if grep -r "PublicAccessBlockConfiguration.*false\|AccessControl.*PublicRead\|AccessControl.*PublicReadWrite" cloudformation/; then
+              echo "❌ S3 buckets found with public access"
+              exit 1
+            else
+              echo "✅ S3 buckets properly configured with private access"
+            fi
+          else
+            echo "ℹ️  No S3 buckets found"
+          fi
+
+      - name: Validate DeletionPolicy
+        run: |
+          echo "Checking DeletionPolicy on critical resources..."
+          if grep -r "AWS::S3::Bucket\|AWS::Logs::LogGroup" cloudformation/; then
+            if ! grep -r "DeletionPolicy.*Retain\|DeletionPolicy.*Delete" cloudformation/; then
+              echo "❌ Critical resources found without DeletionPolicy"
+              exit 1
+            else
+              echo "✅ Critical resources have DeletionPolicy configured"
+            fi
+          else
+            echo "ℹ️  No critical resources found"
+          fi
+
+  deploy-layer:
+    runs-on: ubuntu-latest
+    needs: [version, security-checks]
     outputs:
       layer_version: ${{ steps.upload_layer.outputs.LAYER_VERSION }}
     steps:
@@ -97,9 +204,65 @@ jobs:
           echo "LAYER_VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "✅ Layer uploaded to s3://urgd-applicationdata/stitch/layers/${VERSION}/svg-embroidery.zip"
 
+  build-shield-lambdas:
+    runs-on: ubuntu-latest
+    needs: [version, security-checks]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Build Shield integration Lambdas
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          echo "🔨 Building Shield integration Lambdas for version: $VERSION"
+          
+          mkdir -p artifacts
+          
+          # Build upload URL generator
+          cd lambdas
+          zip -r ../artifacts/upload-url-generator-${VERSION}.zip upload_url_generator.py
+          
+          # Build status checker
+          zip -r ../artifacts/status-checker-${VERSION}.zip status_checker.py
+          
+          # Build shield callback
+          zip -r ../artifacts/shield-callback-${VERSION}.zip shield_callback.py
+          cd ..
+          
+          echo "✅ Shield integration Lambdas built successfully"
+          echo "📦 Upload URL Generator: upload-url-generator-${VERSION}.zip"
+          echo "📦 Status Checker: status-checker-${VERSION}.zip"
+          echo "📦 Shield Callback: shield-callback-${VERSION}.zip"
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-west-2' }}
+      
+      - name: Upload Shield Lambda artifacts
+        run: |
+          VERSION="${{ needs.version.outputs.version }}"
+          echo "📦 Uploading Shield Lambda artifacts for version: $VERSION"
+          
+          aws s3 cp artifacts/upload-url-generator-${VERSION}.zip \
+            s3://urgd-applicationdata/stitch/artifacts/${VERSION}/upload-url-generator-${VERSION}.zip \
+            --region us-west-2
+          
+          aws s3 cp artifacts/status-checker-${VERSION}.zip \
+            s3://urgd-applicationdata/stitch/artifacts/${VERSION}/status-checker-${VERSION}.zip \
+            --region us-west-2
+          
+          aws s3 cp artifacts/shield-callback-${VERSION}.zip \
+            s3://urgd-applicationdata/stitch/artifacts/${VERSION}/shield-callback-${VERSION}.zip \
+            --region us-west-2
+          
+          echo "✅ Shield Lambda artifacts uploaded to S3"
+
   deploy:
     runs-on: ubuntu-latest
-    needs: [version, deploy-layer]
+    needs: [version, security-checks, deploy-layer, build-shield-lambdas]
     
     steps:
     - name: Checkout code
@@ -170,6 +333,10 @@ jobs:
           {"ParameterKey": "GitCommit", "ParameterValue": "$VERSION"},
           {"ParameterKey": "StitchFunctionCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/stitch-function-$VERSION.zip"},
           {"ParameterKey": "StitchLayerCodeKey", "ParameterValue": "stitch/layers/$VERSION/svg-embroidery.zip"},
+          {"ParameterKey": "UploadUrlGeneratorCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/upload-url-generator-$VERSION.zip"},
+          {"ParameterKey": "StatusCheckerCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/status-checker-$VERSION.zip"},
+          {"ParameterKey": "ShieldCallbackCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/shield-callback-$VERSION.zip"},
+          {"ParameterKey": "ShieldBucketName", "ParameterValue": "{{resolve:ssm:/urgd/shield/quarantine_bucket_name}}"},
           {"ParameterKey": "AcmCertArnApiRegion", "ParameterValue": "arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935"},
           {"ParameterKey": "AcmCertArnCloudFront", "ParameterValue": "arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47"},
           {"ParameterKey": "UrgdDevHostedZoneId", "ParameterValue": "Z01725332W8W14423YXSC"},
