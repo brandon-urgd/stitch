@@ -187,6 +187,15 @@ Resources:
               - kms:Decrypt
               - kms:GenerateDataKey
             Resource: '*'
+          - Sid: Allow Stitch Lambda Functions
+            Effect: Allow
+            Principal:
+              AWS: !GetAtt UploadUrlGeneratorRole.Arn
+            Action:
+              - kms:Decrypt
+              - kms:GenerateDataKey
+              - kms:DescribeKey
+            Resource: '*'
       Tags:
         - Key: brand
           Value: urgd
