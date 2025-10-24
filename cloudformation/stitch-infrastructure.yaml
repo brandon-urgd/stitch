@@ -427,6 +427,7 @@ Resources:
               - kms:Decrypt
               - kms:ReEncrypt*
               - kms:GenerateDataKey*
+              - kms:CreateGrant
               - kms:DescribeKey
             Resource: '*'
             Condition:
