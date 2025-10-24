@@ -83,7 +83,6 @@ Parameters:
   # Shield Integration Parameters
   ShieldBucketName:
     Type: String
-    Default: '{{resolve:ssm:/urgd/shield/quarantine_bucket_name}}'
     Description: 'Shield quarantine bucket name from SSM Parameter Store'
 
   ShieldBucketArn:
