@@ -485,7 +485,7 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-svg-converter-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      KmsKeyId: !Ref StitchKmsKey
+      KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - StitchSvgConverterFunction
       - StitchKmsKey
@@ -533,7 +533,7 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-health-check-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      KmsKeyId: !Ref StitchKmsKey
+      KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - StitchHealthCheckFunction
       - StitchKmsKey
@@ -1521,7 +1521,7 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-upload-url-generator-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      KmsKeyId: !Ref StitchKmsKey
+      KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - UploadUrlGeneratorFunction
       - StitchKmsKey
@@ -1533,7 +1533,7 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-status-checker-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      KmsKeyId: !Ref StitchKmsKey
+      KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - StatusCheckerFunction
       - StitchKmsKey
@@ -1545,7 +1545,7 @@ Resources:
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-shield-callback-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
-      KmsKeyId: !Ref StitchKmsKey
+      KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - ShieldCallbackFunction
       - StitchKmsKey
