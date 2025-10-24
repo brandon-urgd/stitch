@@ -1236,6 +1236,12 @@ Resources:
                 Action:
                   - sqs:SendMessage
                 Resource: !GetAtt StitchLambdaDLQ.Arn
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:PutObjectAcl
+                Resource: 
+                  - "arn:aws:s3:::urgd-shield-quarantine-*/*"
       Tags:
         - Key: brand
           Value: urgd
