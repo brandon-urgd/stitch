@@ -324,6 +324,31 @@ jobs:
         VERSION="${{ needs.version.outputs.version }}"
         echo "📝 Generating parameter files for version: $VERSION"
         
+        # Fetch Shield parameters from SSM
+        echo "🔍 Fetching Shield parameters from SSM..."
+        SHIELD_BUCKET_NAME=$(aws ssm get-parameter \
+          --name "/urgd/shield/quarantine_bucket_name" \
+          --query 'Parameter.Value' \
+          --output text \
+          --region us-west-2)
+        
+        SHIELD_BUCKET_ARN=$(aws ssm get-parameter \
+          --name "/urgd/shield/quarantine_bucket_arn" \
+          --query 'Parameter.Value' \
+          --output text \
+          --region us-west-2)
+        
+        SHIELD_EVENTBRIDGE_RULE_ARN=$(aws ssm get-parameter \
+          --name "/urgd/shield/eventbridge_rule_arn" \
+          --query 'Parameter.Value' \
+          --output text \
+          --region us-west-2)
+        
+        echo "✅ Shield parameters fetched:"
+        echo "  - Bucket Name: $SHIELD_BUCKET_NAME"
+        echo "  - Bucket ARN: $SHIELD_BUCKET_ARN"
+        echo "  - EventBridge Rule ARN: $SHIELD_EVENTBRIDGE_RULE_ARN"
+        
         mkdir -p parameter-files
         
         for env in dev staging prod; do
@@ -336,7 +361,9 @@ jobs:
           {"ParameterKey": "UploadUrlGeneratorCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/upload-url-generator-$VERSION.zip"},
           {"ParameterKey": "StatusCheckerCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/status-checker-$VERSION.zip"},
           {"ParameterKey": "ShieldCallbackCodeKey", "ParameterValue": "stitch/artifacts/$VERSION/shield-callback-$VERSION.zip"},
-          {"ParameterKey": "ShieldBucketName", "ParameterValue": "{{resolve:ssm:/urgd/shield/quarantine_bucket_name}}"},
+          {"ParameterKey": "ShieldBucketName", "ParameterValue": "$SHIELD_BUCKET_NAME"},
+          {"ParameterKey": "ShieldBucketArn", "ParameterValue": "$SHIELD_BUCKET_ARN"},
+          {"ParameterKey": "ShieldEventBridgeRuleArn", "ParameterValue": "$SHIELD_EVENTBRIDGE_RULE_ARN"},
           {"ParameterKey": "AcmCertArnApiRegion", "ParameterValue": "arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935"},
           {"ParameterKey": "AcmCertArnCloudFront", "ParameterValue": "arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47"},
           {"ParameterKey": "UrgdDevHostedZoneId", "ParameterValue": "Z01725332W8W14423YXSC"},
@@ -344,6 +371,8 @@ jobs:
         ]
         EOF
         done
+        
+        echo "✅ Parameter files generated with Shield integration parameters"
 
     - name: Copy parameter files for promotions
       if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment != 'dev'

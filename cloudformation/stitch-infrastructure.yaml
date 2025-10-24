@@ -88,12 +88,10 @@ Parameters:
 
   ShieldBucketArn:
     Type: String
-    Default: '{{resolve:ssm:/urgd/shield/quarantine_bucket_arn}}'
     Description: 'Shield quarantine bucket ARN from SSM Parameter Store'
 
   ShieldEventBridgeRuleArn:
     Type: String
-    Default: '{{resolve:ssm:/urgd/shield/eventbridge_rule_arn}}'
     Description: 'Shield EventBridge rule ARN from SSM Parameter Store'
 
 # Conditions
