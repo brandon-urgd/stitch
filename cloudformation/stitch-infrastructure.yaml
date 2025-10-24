@@ -451,7 +451,7 @@ Resources:
           - Sid: Allow SNS
             Effect: Allow
             Principal:
-              Service: sns.amazonaws.com
+              Service: !Sub 'sns.${AWS::Region}.amazonaws.com'
             Action:
               - kms:Encrypt
               - kms:Decrypt
