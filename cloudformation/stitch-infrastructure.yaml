@@ -402,7 +402,7 @@ Resources:
         - Key: cfn-stack-name
           Value: !Ref AWS::StackName
 
-  # KMS Key for encryption
+  # KMS Key for encryption (updated 2025-10-24)
   StitchKmsKey:
     Type: AWS::KMS::Key
     Properties:
