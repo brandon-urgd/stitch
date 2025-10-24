@@ -758,6 +758,12 @@ Resources:
         Type: AWS_PROXY
         IntegrationHttpMethod: POST
         Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UploadUrlGeneratorFunction.Arn}/invocations'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: false
+            method.response.header.Access-Control-Allow-Headers: false
+            method.response.header.Content-Type: false
 
   # API Gateway Method for OPTIONS /v1/upload-url (CORS)
   StitchUploadUrlOptionsMethod:
