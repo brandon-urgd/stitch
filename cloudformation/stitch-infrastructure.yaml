@@ -279,6 +279,14 @@ Resources:
                   - dynamodb:Query
                   - dynamodb:Scan
                 Resource: !GetAtt ConversionStatusTable.Arn
+        - PolicyName: SQSAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt StitchLambdaDLQ.Arn
       Tags:
         - Key: brand
           Value: urgd
@@ -1205,6 +1213,10 @@ Resources:
                 Action:
                   - dynamodb:PutItem
                 Resource: !GetAtt ConversionStatusTable.Arn
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt StitchLambdaDLQ.Arn
       Tags:
         - Key: brand
           Value: urgd
@@ -1280,6 +1292,10 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource: !Sub '${StitchStorageBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt StitchLambdaDLQ.Arn
       Tags:
         - Key: brand
           Value: urgd
@@ -1380,6 +1396,10 @@ Resources:
                   - ssm:GetParameter
                 Resource:
                   - "arn:aws:ssm:us-west-2:*:parameter/urgd/shield/*"
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                Resource: !GetAtt StitchLambdaDLQ.Arn
       Tags:
         - Key: brand
           Value: urgd
@@ -1634,6 +1654,18 @@ Outputs:
     Value: !Ref StitchWebsiteBucket
     Export:
       Name: !Sub '${AWS::StackName}-WebsiteBucketName'
+
+  ProcessingBucketName:
+    Description: 'S3 bucket for Shield processing'
+    Value: !Ref StitchProcessingBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-ProcessingBucketName'
+
+  AccessLogsBucketName:
+    Description: 'S3 bucket for access logs'
+    Value: !Ref StitchAccessLogsBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-AccessLogsBucketName'
 
   CustomApiUrl:
     Description: 'Custom API Gateway URL'
