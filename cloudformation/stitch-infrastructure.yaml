@@ -418,7 +418,14 @@ Resources:
               AWS: !Sub "arn:aws:iam::${AWS::AccountId}:root"
             Action: kms:*
             Resource: '*'
-          - Sid: Allow CloudWatch Logs
+          - Sid: Allow CloudWatch Logs DescribeKey
+            Effect: Allow
+            Principal:
+              Service: !Sub 'logs.${AWS::Region}.amazonaws.com'
+            Action:
+              - kms:DescribeKey
+            Resource: '*'
+          - Sid: Allow CloudWatch Logs Encryption & Grants
             Effect: Allow
             Principal:
               Service: !Sub 'logs.${AWS::Region}.amazonaws.com'
@@ -430,7 +437,6 @@ Resources:
               - kms:CreateGrant
               - kms:ListGrants
               - kms:RevokeGrant
-              - kms:DescribeKey
             Resource: '*'
             Condition:
               StringEquals:
