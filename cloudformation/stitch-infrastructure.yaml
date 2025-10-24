@@ -437,7 +437,7 @@ Resources:
           - Sid: Allow CloudTrail
             Effect: Allow
             Principal:
-              Service: !Sub 'cloudtrail.${AWS::Region}.amazonaws.com'
+              Service: cloudtrail.amazonaws.com
             Action:
               - kms:Encrypt
               - kms:Decrypt
@@ -451,7 +451,7 @@ Resources:
           - Sid: Allow SNS
             Effect: Allow
             Principal:
-              Service: !Sub 'sns.${AWS::Region}.amazonaws.com'
+              Service: sns.amazonaws.com
             Action:
               - kms:Encrypt
               - kms:Decrypt
