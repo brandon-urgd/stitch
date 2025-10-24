@@ -111,6 +111,7 @@ Resources:
   # S3 Bucket for user temporary file storage
   StitchStorageBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       BucketName: !Sub 'urgd-stitch-storage-${Environment}-${AWS::AccountId}'
       LifecycleConfiguration:
@@ -139,6 +140,7 @@ Resources:
   # S3 Bucket for Shield processing (clean files from Shield)
   StitchProcessingBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       BucketName: !Sub 'urgd-stitch-processing-${Environment}-${AWS::AccountId}'
       LifecycleConfiguration:
@@ -201,6 +203,7 @@ Resources:
   # DynamoDB Table for conversion status tracking
   ConversionStatusTable:
     Type: AWS::DynamoDB::Table
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       TableName: !Sub 'urgd-stitch-conversion-status-${Environment}'
       BillingMode: PAY_PER_REQUEST
@@ -291,6 +294,7 @@ Resources:
   # S3 Bucket for static website hosting
   StitchWebsiteBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       BucketName: !Sub 'urgd-stitch-website-${Environment}-${AWS::AccountId}'
       WebsiteConfiguration:
@@ -463,6 +467,7 @@ Resources:
   # CloudWatch Log Group for Lambda Function
   StitchLambdaLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-svg-converter-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
@@ -507,6 +512,7 @@ Resources:
   # CloudWatch Log Group for Health Check Function
   StitchHealthCheckLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-health-check-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
@@ -869,6 +875,7 @@ Resources:
   # S3 Bucket for access logs
   StitchAccessLogsBucket:
     Type: AWS::S3::Bucket
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       BucketName: !Sub 'urgd-stitch-access-logs-${Environment}-${AWS::AccountId}'
       PublicAccessBlockConfiguration:
@@ -1477,6 +1484,7 @@ Resources:
   # CloudWatch Log Groups for Shield Integration Lambdas
   UploadUrlGeneratorLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-upload-url-generator-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
@@ -1485,6 +1493,7 @@ Resources:
 
   StatusCheckerLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-status-checker-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
@@ -1493,6 +1502,7 @@ Resources:
 
   ShieldCallbackLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     Properties:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-shield-callback-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
