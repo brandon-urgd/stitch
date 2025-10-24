@@ -435,9 +435,6 @@ Resources:
               - kms:ReEncrypt*
               - kms:GenerateDataKey*
             Resource: '*'
-            Condition:
-              StringEquals:
-                'kms:ViaService': !Sub 'logs.${AWS::Region}.amazonaws.com'
           - Sid: Allow CloudTrail
             Effect: Allow
             Principal:
