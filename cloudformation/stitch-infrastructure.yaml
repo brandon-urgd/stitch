@@ -471,11 +471,6 @@ Resources:
         - Key: cfn-stack-name
           Value: !Ref AWS::StackName
 
-  StitchKmsKeyAlias:
-    Type: AWS::KMS::Alias
-    Properties:
-      AliasName: !Sub "alias/urgd-stitch-${Environment}"
-      TargetKeyId: !Ref StitchKmsKey
 
   # CloudWatch Log Group for Lambda Function
   StitchLambdaLogGroup:
