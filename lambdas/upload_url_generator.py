@@ -59,19 +59,16 @@ def lambda_handler(event, context):
         
         # Generate presigned POST (more secure than presigned PUT)
         # POST allows us to set conditions and required fields
+        # Note: Shield bucket policy only allows x-amz-meta-app-name metadata
         presigned_post = s3_client.generate_presigned_post(
             Bucket=shield_bucket,
             Key=s3_key,
             Fields={
                 'x-amz-meta-app-name': 'stitch',
-                'x-amz-meta-request-id': request_id,
-                'x-amz-meta-destination-bucket': stitch_processing_bucket,
-                'x-amz-meta-upload-timestamp': datetime.utcnow().isoformat(),
                 'Content-Type': 'image/svg+xml'
             },
             Conditions=[
                 {'x-amz-meta-app-name': 'stitch'},
-                {'x-amz-meta-request-id': request_id},
                 ['content-length-range', 1, 10485760],  # 1 byte to 10MB
                 ['starts-with', '$Content-Type', 'image/']  # Only images
             ],
@@ -91,6 +88,8 @@ def lambda_handler(event, context):
                 'upload_url': presigned_post['url'],
                 'fields': presigned_post['fields'],
                 'request_id': request_id,
+                'destination_bucket': stitch_processing_bucket,
+                'upload_timestamp': datetime.utcnow().isoformat(),
                 'expires_in': 300,
                 'message': 'Upload directly to this URL using the provided fields'
             })
