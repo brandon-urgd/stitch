@@ -1486,7 +1486,7 @@ Resources:
           resource:
             s3BucketDetails:
               - name: 
-                  - prefix: !Ref ShieldBucketName
+                  prefix: !Ref ShieldBucketName
       State: ENABLED
       Targets:
         - Arn: !GetAtt ShieldCallbackFunction.Arn
