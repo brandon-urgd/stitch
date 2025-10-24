@@ -428,6 +428,8 @@ Resources:
               - kms:ReEncrypt*
               - kms:GenerateDataKey*
               - kms:CreateGrant
+              - kms:ListGrants
+              - kms:RevokeGrant
               - kms:DescribeKey
             Resource: '*'
             Condition:
