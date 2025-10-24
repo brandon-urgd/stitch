@@ -471,6 +471,12 @@ Resources:
         - Key: cfn-stack-name
           Value: !Ref AWS::StackName
 
+  StitchKmsKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub "alias/urgd-stitch-${Environment}"
+      TargetKeyId: !Ref StitchKmsKey
+
 
   # CloudWatch Log Group for Lambda Function
   StitchLambdaLogGroup:
@@ -483,7 +489,7 @@ Resources:
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - StitchSvgConverterFunction
-      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   # Health Check Lambda Function
   StitchHealthCheckFunction:
@@ -531,7 +537,7 @@ Resources:
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - StitchHealthCheckFunction
-      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   # Dead Letter Queue for Lambda functions
   StitchLambdaDLQ:
@@ -1519,7 +1525,7 @@ Resources:
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - UploadUrlGeneratorFunction
-      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   StatusCheckerLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1531,7 +1537,7 @@ Resources:
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - StatusCheckerFunction
-      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   ShieldCallbackLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1543,7 +1549,7 @@ Resources:
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
       - ShieldCallbackFunction
-      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   # CloudWatch Alarms for Shield Integration
   ShieldCallbackErrorAlarm:
