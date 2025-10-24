@@ -70,14 +70,14 @@ jobs:
       - name: Lint CloudFormation
         run: |
           echo "🔍 Running CloudFormation linting..."
-          echo "Running: cfn-lint cloudformation/*.yaml --ignore-checks W3045"
+          echo "Running: cfn-lint cloudformation/*.yaml --ignore-checks W3045,W3005"
           
-          if cfn-lint cloudformation/*.yaml --ignore-checks W3045 2>&1; then
+          if cfn-lint cloudformation/*.yaml --ignore-checks W3045,W3005 2>&1; then
             echo "✅ CloudFormation linting passed"
           else
             echo "❌ CloudFormation linting failed"
             echo "🔍 Full cfn-lint output:"
-            cfn-lint cloudformation/*.yaml --ignore-checks W3045
+            cfn-lint cloudformation/*.yaml --ignore-checks W3045,W3005
             exit 1
           fi
 

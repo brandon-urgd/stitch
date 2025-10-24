@@ -428,8 +428,8 @@ Resources:
               - kms:DescribeKey
             Resource: '*'
             Condition:
-              ArnEquals:
-                'kms:EncryptionContext:aws:logs:arn': !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*"
+              ArnLike:
+                'kms:EncryptionContext:aws:logs:arn': !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
           - Sid: Allow CloudTrail
             Effect: Allow
             Principal:
@@ -482,7 +482,10 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-svg-converter-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !Ref StitchKmsKey
-    DependsOn: StitchSvgConverterFunction
+    DependsOn: 
+      - StitchSvgConverterFunction
+      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   # Health Check Lambda Function
   StitchHealthCheckFunction:
@@ -528,7 +531,10 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-health-check-v1-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !Ref StitchKmsKey
-    DependsOn: StitchHealthCheckFunction
+    DependsOn: 
+      - StitchHealthCheckFunction
+      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   # Dead Letter Queue for Lambda functions
   StitchLambdaDLQ:
@@ -1514,7 +1520,10 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-upload-url-generator-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !Ref StitchKmsKey
-    DependsOn: UploadUrlGeneratorFunction
+    DependsOn: 
+      - UploadUrlGeneratorFunction
+      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   StatusCheckerLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1524,7 +1533,10 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-status-checker-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !Ref StitchKmsKey
-    DependsOn: StatusCheckerFunction
+    DependsOn: 
+      - StatusCheckerFunction
+      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   ShieldCallbackLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1534,7 +1546,10 @@ Resources:
       LogGroupName: !Sub '/aws/lambda/urgd-stitch-shield-callback-${Environment}-${GitCommit}'
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !Ref StitchKmsKey
-    DependsOn: ShieldCallbackFunction
+    DependsOn: 
+      - ShieldCallbackFunction
+      - StitchKmsKey
+      - StitchKmsKeyAlias
 
   # CloudWatch Alarms for Shield Integration
   ShieldCallbackErrorAlarm:
