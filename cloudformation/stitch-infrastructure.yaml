@@ -1483,10 +1483,6 @@ Resources:
         detail-type: ["GuardDuty Finding"]
         detail:
           type: ["Malware:S3/Threat"]
-          resource:
-            s3BucketDetails:
-              - name: 
-                  prefix: !Ref ShieldBucketName
       State: ENABLED
       Targets:
         - Arn: !GetAtt ShieldCallbackFunction.Arn
