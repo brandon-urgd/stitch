@@ -407,6 +407,8 @@ Resources:
     Type: AWS::KMS::Key
     Properties:
       Description: !Sub "KMS key for urgd-stitch-${Environment}"
+      KeySpec: SYMMETRIC_DEFAULT
+      KeyUsage: ENCRYPT_DECRYPT
       KeyPolicy:
         Version: '2012-10-17'
         Statement:
@@ -419,7 +421,7 @@ Resources:
           - Sid: Allow CloudWatch Logs
             Effect: Allow
             Principal:
-              Service: logs.amazonaws.com
+              Service: !Sub 'logs.${AWS::Region}.amazonaws.com'
             Action:
               - kms:Encrypt
               - kms:Decrypt
@@ -428,12 +430,14 @@ Resources:
               - kms:DescribeKey
             Resource: '*'
             Condition:
+              StringEquals:
+                'kms:ViaService': !Sub 'logs.${AWS::Region}.amazonaws.com'
               ArnLike:
                 'kms:EncryptionContext:aws:logs:arn': !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
           - Sid: Allow CloudTrail
             Effect: Allow
             Principal:
-              Service: cloudtrail.amazonaws.com
+              Service: !Sub 'cloudtrail.${AWS::Region}.amazonaws.com'
             Action:
               - kms:Encrypt
               - kms:Decrypt
