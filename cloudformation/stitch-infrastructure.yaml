@@ -489,7 +489,6 @@ Resources:
     DependsOn: 
       - StitchSvgConverterFunction
       - StitchKmsKey
-      - StitchKmsKeyAlias
 
   # Health Check Lambda Function
   StitchHealthCheckFunction:
@@ -538,7 +537,6 @@ Resources:
     DependsOn: 
       - StitchHealthCheckFunction
       - StitchKmsKey
-      - StitchKmsKeyAlias
 
   # Dead Letter Queue for Lambda functions
   StitchLambdaDLQ:
@@ -1527,7 +1525,6 @@ Resources:
     DependsOn: 
       - UploadUrlGeneratorFunction
       - StitchKmsKey
-      - StitchKmsKeyAlias
 
   StatusCheckerLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1540,7 +1537,6 @@ Resources:
     DependsOn: 
       - StatusCheckerFunction
       - StitchKmsKey
-      - StitchKmsKeyAlias
 
   ShieldCallbackLogGroup:
     Type: AWS::Logs::LogGroup
@@ -1553,7 +1549,6 @@ Resources:
     DependsOn: 
       - ShieldCallbackFunction
       - StitchKmsKey
-      - StitchKmsKeyAlias
 
   # CloudWatch Alarms for Shield Integration
   ShieldCallbackErrorAlarm:
