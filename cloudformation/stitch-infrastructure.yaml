@@ -190,7 +190,10 @@ Resources:
           - Sid: Allow Stitch Lambda Functions
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-upload-url-generator-role-${Environment}'
+              AWS: 
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-upload-url-generator-role-${Environment}'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-status-checker-role-${Environment}'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-shield-callback-role-${Environment}'
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey
