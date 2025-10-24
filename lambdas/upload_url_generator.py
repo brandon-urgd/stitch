@@ -36,7 +36,7 @@ def lambda_handler(event, context):
         # Generate unique request ID
         request_id = str(uuid.uuid4())
         
-        # S3 key with app prefix (stitch/)
+        # S3 key with app prefix and request ID for callback identification
         s3_key = f"stitch/{request_id}/upload.svg"
         
         logger.info(f"Generated request ID: {request_id}")
@@ -51,6 +51,8 @@ def lambda_handler(event, context):
                 'request_id': request_id,
                 'status': 'uploading',
                 'timestamp': datetime.utcnow().isoformat(),
+                'destination_bucket': stitch_processing_bucket,
+                's3_key': s3_key,
                 'ttl': int((datetime.utcnow().timestamp() + (7 * 24 * 60 * 60)))  # 7 days TTL
             }
         )

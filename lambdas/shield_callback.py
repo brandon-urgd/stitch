@@ -87,17 +87,35 @@ def lambda_handler(event, context):
             logger.info(f"Ignoring event for app: {app_name}")
             return {'statusCode': 200, 'body': 'Not for stitch'}
         
-        request_id = metadata.get('request-id', '')
-        destination_bucket = metadata.get('destination-bucket', '')
+        # Extract request ID from S3 key (format: stitch/{request_id}/upload.svg)
+        if not object_key.startswith('stitch/'):
+            logger.error(f"Invalid S3 key format: {object_key}")
+            return {'statusCode': 400, 'body': 'Invalid S3 key format'}
         
-        if not request_id:
-            logger.error("No request-id found in metadata")
-            return {'statusCode': 400, 'body': 'No request-id in metadata'}
+        try:
+            request_id = object_key.split('/')[1]  # Extract from stitch/{request_id}/upload.svg
+        except IndexError:
+            logger.error(f"Could not extract request ID from S3 key: {object_key}")
+            return {'statusCode': 400, 'body': 'Could not extract request ID'}
         
         logger.info(f"Processing request: {request_id}")
         
         # Get DynamoDB table
         table = dynamodb.Table(STATUS_TABLE)
+        
+        # Get request details from DynamoDB
+        try:
+            response = table.get_item(Key={'request_id': request_id})
+            if 'Item' not in response:
+                logger.error(f"Request not found in DynamoDB: {request_id}")
+                return {'statusCode': 404, 'body': 'Request not found'}
+            
+            item = response['Item']
+            destination_bucket = item.get('destination_bucket', PROCESSING_BUCKET)
+            logger.info(f"Found destination bucket: {destination_bucket}")
+        except Exception as e:
+            logger.error(f"Failed to get request from DynamoDB: {str(e)}")
+            return {'statusCode': 500, 'body': 'Failed to get request details'}
         
         if scan_status == 'NO_THREATS_FOUND':
             logger.info(f"Clean file detected: {object_key}")
