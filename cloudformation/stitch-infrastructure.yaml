@@ -441,8 +441,6 @@ Resources:
             Condition:
               StringEquals:
                 'kms:ViaService': !Sub 'logs.${AWS::Region}.amazonaws.com'
-              ArnLike:
-                'kms:EncryptionContext:aws:logs:arn': !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
           - Sid: Allow CloudTrail
             Effect: Allow
             Principal:
