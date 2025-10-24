@@ -1279,7 +1279,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:GetObject
-                Resource: !Sub '${StitchStorageBucket}/*'
+                Resource: !Sub '${StitchStorageBucket.Arn}/*'
       Tags:
         - Key: brand
           Value: urgd
