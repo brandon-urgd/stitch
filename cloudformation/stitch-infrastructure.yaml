@@ -299,16 +299,6 @@ Resources:
                 Action:
                   - sqs:SendMessage
                 Resource: !GetAtt StitchLambdaDLQ.Arn
-        - PolicyName: KMSAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - kms:Decrypt
-                  - kms:GenerateDataKey
-                  - kms:DescribeKey
-                Resource: !GetAtt StitchKmsKey.Arn
       Tags:
         - Key: brand
           Value: urgd
@@ -486,10 +476,10 @@ Resources:
             Effect: Allow
             Principal:
               AWS: 
-                - !GetAtt LambdaExecutionRole.Arn
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-upload-url-generator-role-${Environment}'
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-status-checker-role-${Environment}'
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-shield-callback-role-${Environment}'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-lambda-role-${Environment}'
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey
