@@ -1,10 +1,10 @@
 # Stitch - SVG to PES Embroidery Converter
 
-**🎉 LIVE SERVICE** - A production-ready web application that converts SVG files to PES embroidery format using AWS infrastructure.
+**🎉 PRODUCTION READY** - A production-ready web application that converts SVG files to PES embroidery format using AWS infrastructure with enterprise-grade security.
 
 ## 🌐 Live Website
 
-**Visit: https://d3mjr86znz3p8h.cloudfront.net**
+**Visit: https://stitch.urgdstudios.com**
 
 Simply upload an SVG file and get a perfectly formatted PES file for your embroidery machine!
 
@@ -36,7 +36,7 @@ Simply upload an SVG file and get a perfectly formatted PES file for your embroi
 
 ## 🛡️ Shield Integration
 
-Stitch now includes enterprise-grade malware protection through AWS GuardDuty integration:
+Stitch includes enterprise-grade malware protection through AWS GuardDuty integration:
 
 ### How It Works
 1. **Secure Upload**: Files upload directly to Shield quarantine bucket via presigned URLs
@@ -56,7 +56,7 @@ Stitch now includes enterprise-grade malware protection through AWS GuardDuty in
 - `GET /v1/upload-url` - Generate presigned upload URL
 - `GET /v1/status/{request_id}` - Check conversion status
 
-For detailed integration documentation, see [docs/SHIELD_INTEGRATION.md](docs/SHIELD_INTEGRATION.md).
+For detailed integration documentation, see [ur gd Shield Integration Standard.md](../../urgd_library/standards/ur%20gd%20Shield%20Integration%20Standard.md).
 
 ## 🚀 Deployment
 
@@ -82,16 +82,13 @@ urgd-applicationdata/stitch/
 
 ## 🛠️ Development
 
-### Local Testing
-```bash
-# Test Lambda function locally
-cd lambda
-pip install -r requirements.txt
-python svg_converter.py
+### Testing
+The application is designed for production use with comprehensive end-to-end testing:
 
-# Test with sample SVG
-curl -X POST -F "file=@test-heart.svg" https://your-api-gateway-url/prod/api
-```
+- **Live Website Testing**: Use the production website at https://stitch.urgdstudios.com
+- **API Testing**: Test upload and status endpoints directly
+- **Shield Integration**: Upload files to verify malware scanning works
+- **Staging Environment**: Full user flow validation before production
 
 ### Adding New Formats
 The architecture supports easy addition of new embroidery formats:
@@ -117,25 +114,22 @@ stitch/
 │   └── deploy-cloudformation.yml    # CI/CD pipeline
 ├── cloudformation/
 │   └── stitch-infrastructure.yaml   # AWS infrastructure
-├── docs/
-│   ├── SHIELD_INTEGRATION.md        # Shield integration guide
-│   └── API.md                       # API documentation
 ├── lambdas/
 │   ├── svg_converter.py             # Main conversion logic
 │   ├── upload_url_generator.py      # Presigned URL generation
 │   ├── status_checker.py            # Status polling endpoint
 │   ├── shield_callback.py           # GuardDuty event processor
+│   ├── health_check.py              # Health check endpoint
 │   └── requirements.txt             # Python dependencies
-├── tests/
-│   ├── test_presigned_upload.py     # Upload functionality tests
-│   ├── test_shield_integration.py   # Integration tests
-│   ├── fixtures/                    # Test SVG files
-│   └── requirements.txt             # Test dependencies
+├── layers/
+│   └── svg-embroidery/              # Lambda layer for pyembroidery
+│       └── requirements.txt
 ├── website/
 │   ├── index.html                   # Frontend interface
 │   └── assets/                      # Fonts, logos, etc.
 ├── scripts/
-│   └── deploy-cloudformation.sh     # Deployment script
+│   └── register-with-shield.py      # Shield registration script
+├── ROADMAP.md                       # Development roadmap
 └── README.md
 ```
 
@@ -150,6 +144,7 @@ stitch/
   - Presigned URL generator
   - Status checker
   - Shield callback processor
+  - Health check endpoint
 - **API Gateway**: RESTful API for file processing
 - **DynamoDB Table**: Conversion status tracking
 - **EventBridge Rule**: GuardDuty event routing
@@ -196,8 +191,92 @@ stitch/
 - **Quality Control**: Max 4mm stitch length, min 0.5mm, coordinate validation
 - **Memory Management**: 2000 stitches per block to prevent issues
 
+## 🚀 Getting Started
+
+### For Users
+1. Visit https://stitch.urgdstudios.com
+2. Upload your SVG file
+3. Wait for conversion (usually 30-90 seconds)
+4. Download your PES file
+
+### For Developers
+1. Clone the repository
+2. Deploy to dev environment using GitHub Actions
+3. Test with sample SVG files
+4. Deploy to staging for full validation
+5. Deploy to production when ready
+
+### For Integration
+1. Read the [Shield Integration Standard](../../urgd_library/standards/ur%20gd%20Shield%20Integration%20Standard.md)
+2. Implement callback Lambda following the standard
+3. Update your upload flow to use Shield
+4. Test with EICAR files for malware detection
+
+## 📈 Monitoring
+
+### CloudWatch Metrics
+- **Conversion Success Rate**: Track successful conversions
+- **Processing Time**: Monitor conversion performance
+- **Error Rates**: Track and alert on failures
+- **Security Events**: Monitor malware detection
+
+### Logs
+- **Lambda Execution**: All function logs in CloudWatch
+- **API Gateway**: Request/response logging
+- **Shield Integration**: Security event logging
+- **DynamoDB**: Status tracking and debugging
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **Upload Fails**: Check presigned URL generation and S3 permissions
+2. **Conversion Stuck**: Check DynamoDB status and Lambda logs
+3. **Download Link Missing**: Verify conversion completed successfully
+4. **Malware Detected**: File was infected and properly rejected
+5. **API Errors**: Check API Gateway deployment and Lambda permissions
+
+### Debug Commands
+
+```bash
+# Check API Gateway status
+aws apigateway get-rest-apis --query 'items[?name==`urgd-stitch-api-dev`]'
+
+# Check Lambda function status
+aws lambda list-functions --query 'Functions[?contains(FunctionName, `stitch`)]'
+
+# Check DynamoDB table
+aws dynamodb describe-table --table-name urgd-stitch-conversion-status-dev
+
+# Check S3 buckets
+aws s3 ls s3://urgd-stitch-storage-dev-*
+aws s3 ls s3://urgd-stitch-processing-dev-*
+```
+
+## 📚 Documentation
+
+- **Architecture**: [Stitch Architecture.md](../../urgd_library/application%20archetecture/Stitch%20Architecture.md)
+- **Shield Integration**: [Shield Integration Standard.md](../../urgd_library/standards/ur%20gd%20Shield%20Integration%20Standard.md)
+- **Build Plan**: [stitch Build Plan.md](../../urgd_library/buildplans/stitch%20Build%20Plan.md)
+- **Handoff Notes**: [Handoff Notes.md](../../urgd_library/buildplans/Handoff%20Notes.md)
+
+## 🎯 Roadmap
+
+See [ROADMAP.md](ROADMAP.md) for planned features and improvements.
+
+## Support
+
+- **Documentation**: Check this README and linked documentation
+- **Issues**: Report bugs and feature requests via GitHub
+- **Operations**: Contact ur/gd operations team for infrastructure issues
+- **Development**: Contact ur/gd development team for integration questions
+
+## License
+
+UNLICENSED - ur/gd studios internal use only
+
 ---
 
-**Built with ❤️ by ur/gd studios**
+**Built quietly powerful, by ur/gd studios**
 
-*Professional embroidery conversion made simple*# Trigger ultimate layer build
+*Professional embroidery conversion made simple*
