@@ -190,7 +190,10 @@ Resources:
           - Sid: Allow Stitch Lambda Functions
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-*-role-${Environment}'
+              AWS: '*'
+            Condition:
+              StringLike:
+                aws:PrincipalArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-*-role-${Environment}'
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey
