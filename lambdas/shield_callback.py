@@ -25,7 +25,12 @@ def lambda_handler(event, context):
     """
     
     try:
-        logger.info(f"Processing GuardDuty event: {json.dumps(event, default=str)}")
+        # Enhanced logging for debugging
+        logger.info("=" * 80)
+        logger.info("SHIELD CALLBACK LAMBDA TRIGGERED")
+        logger.info("=" * 80)
+        logger.info(f"Full event structure: {json.dumps(event, default=str, indent=2)}")
+        logger.info(f"Event keys: {list(event.keys())}")
         
         # Parse EventBridge event structure
         # GuardDuty events have this structure:
@@ -45,15 +50,18 @@ def lambda_handler(event, context):
         #   }
         # }
         
-        detail = event['detail']
+        detail = event.get('detail', {})
+        logger.info(f"Detail section: {json.dumps(detail, default=str, indent=2)}")
+        
         scan_status = detail.get('service', {}).get('additionalInfo', {}).get('scanStatus', 'UNKNOWN')
         s3_object_details = detail.get('resource', {}).get('s3ObjectDetails', [])
         s3_bucket_details = detail.get('resource', {}).get('s3BucketDetails', [])
         timestamp = detail.get('createdAt', '')
         
-        logger.info(f"Scan status: {scan_status}")
-        logger.info(f"S3 object details: {s3_object_details}")
-        logger.info(f"S3 bucket details: {s3_bucket_details}")
+        logger.info(f"Parsed scan status: {scan_status}")
+        logger.info(f"Parsed S3 object details: {s3_object_details}")
+        logger.info(f"Parsed S3 bucket details: {s3_bucket_details}")
+        logger.info(f"Parsed timestamp: {timestamp}")
         
         # Parse S3 object details to get bucket and key
         if not s3_object_details:

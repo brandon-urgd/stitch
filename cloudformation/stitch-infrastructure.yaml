@@ -1506,46 +1506,6 @@ Resources:
       Principal: events.amazonaws.com
       SourceArn: !Ref ShieldEventBridgeRuleArn
 
-  # EventBridge Rule Target for Shield Callback
-  ShieldEventBridgeTarget:
-    Type: AWS::Events::Rule
-    Properties:
-      Name: !Sub 'urgd-stitch-shield-callback-${Environment}'
-      Description: "Route Shield scan results to Stitch callback Lambda"
-      EventPattern:
-        source: ["aws.guardduty"]
-        detail-type: ["GuardDuty Finding"]
-        detail:
-          type: ["Malware:S3/Threat"]
-      State: ENABLED
-      Targets:
-        - Arn: !GetAtt ShieldCallbackFunction.Arn
-          Id: "ShieldCallbackTarget"
-          InputTransformer:
-            InputPathsMap:
-              scanStatus: "$.detail.service.additionalInfo.scanStatus"
-              bucketName: "$.detail.resource.s3BucketDetails[0].name"
-              objectKey: "$.detail.resource.s3ObjectDetails[0].key"
-              timestamp: "$.time"
-            InputTemplate: |
-              {
-                "detail": {
-                  "scanResult": <scanStatus>,
-                  "s3ObjectArn": "arn:aws:s3:::<bucketName>/<objectKey>",
-                  "timestamp": <timestamp>
-                }
-              }
-      Tags:
-        - Key: brand
-          Value: urgd
-        - Key: project
-          Value: stitch
-        - Key: studio
-          Value: Vault
-        - Key: environment
-          Value: !Ref Environment
-        - Key: cfn-stack-name
-          Value: !Ref AWS::StackName
 
 
   # CloudWatch Log Groups for Shield Integration Lambdas
