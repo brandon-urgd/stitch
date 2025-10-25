@@ -380,17 +380,13 @@ jobs:
           echo "🔗 Registering Stitch with Shield..."
           
           # Call Shield registration Lambda
+          echo "{\"action\":\"register\",\"app_name\":\"stitch\",\"callback_lambda_arn\":\"$CALLBACK_ARN\"}" > payload.json
           aws lambda invoke \
             --function-name "$SHIELD_REGISTRATION_ARN" \
-            --payload file:///dev/stdin \
+            --payload file://payload.json \
             --region us-west-2 \
-            response.json << EOF
-{
-  "action": "register",
-  "app_name": "stitch",
-  "callback_lambda_arn": "$CALLBACK_ARN"
-}
-EOF
+            response.json
+          rm -f payload.json
           
           # Check registration response
           if [ -f response.json ]; then
@@ -684,17 +680,13 @@ EOF
               --region us-west-2)
             
             # Call Shield registration Lambda
+            echo "{\"action\":\"register\",\"app_name\":\"stitch\",\"callback_lambda_arn\":\"$CALLBACK_ARN\"}" > payload.json
             aws lambda invoke \
               --function-name "$SHIELD_REGISTRATION_ARN" \
-              --payload file:///dev/stdin \
+              --payload file://payload.json \
               --region us-west-2 \
-              response.json << EOF
-{
-  "action": "register",
-  "app_name": "stitch",
-  "callback_lambda_arn": "$CALLBACK_ARN"
-}
-EOF
+              response.json
+            rm -f payload.json
             
             # Check registration response
             if [ -f response.json ]; then
