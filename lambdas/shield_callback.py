@@ -32,8 +32,8 @@ def lambda_handler(event, context):
         logger.info(f"Full event structure: {json.dumps(event, default=str, indent=2)}")
         logger.info(f"Event keys: {list(event.keys())}")
         
-        # Parse S3 Object Tagging event structure
-        # S3 Object Tagging events have this structure:
+        # Parse S3 Object Tags Added event structure
+        # S3 Object Tags Added events have this structure:
         # {
         #   "detail": {
         #     "bucket": {
@@ -41,23 +41,19 @@ def lambda_handler(event, context):
         #     },
         #     "object": {
         #       "key": "object/key"
-        #     },
-        #     "tags": {
-        #       "GuardDutyMalwareScanStatus": "NO_THREATS_FOUND" or "THREATS_FOUND"
         #     }
         #   }
         # }
+        # Note: Tags are not included in the event - we need to fetch them separately
         
         detail = event.get('detail', {})
         logger.info(f"Detail section: {json.dumps(detail, default=str, indent=2)}")
         
-        # Extract file information from S3 Object Tagging event
+        # Extract file information from S3 Object Tags Added event
         bucket_name = detail.get('bucket', {}).get('name', '')
         object_key = detail.get('object', {}).get('key', '')
-        event_tags = detail.get('tags', {})
         
         logger.info(f"Parsed - Bucket: {bucket_name}, Key: {object_key}")
-        logger.info(f"Event tags: {event_tags}")
         
         if not bucket_name or not object_key:
             logger.error("Missing bucket name or object key in event")
@@ -75,9 +71,7 @@ def lambda_handler(event, context):
             logger.info(f"Scan status from tags: {scan_status}")
         except Exception as e:
             logger.error(f"Failed to get object tags: {str(e)}")
-            # Fallback to event tags if available
-            scan_status = event_tags.get('GuardDutyMalwareScanStatus', 'UNKNOWN')
-            logger.info(f"Using event tags fallback - scan status: {scan_status}")
+            return {'statusCode': 500, 'body': 'Failed to get object tags'}
         
         # Get metadata from S3 object
         try:
@@ -109,6 +103,10 @@ def lambda_handler(event, context):
             return {'statusCode': 400, 'body': 'Could not extract request ID'}
         
         logger.info(f"Processing request: {request_id}")
+        
+        # Get current timestamp
+        from datetime import datetime
+        timestamp = datetime.utcnow().isoformat() + 'Z'
         
         # Get DynamoDB table
         table = dynamodb.Table(STATUS_TABLE)
