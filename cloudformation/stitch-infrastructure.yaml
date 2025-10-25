@@ -1747,6 +1747,13 @@ Outputs:
     Export:
       Name: !Sub "${AWS::StackName}-CriticalAlertsTopicArn"
 
+  # Shield Integration Outputs
+  ShieldCallbackLambdaArn:
+    Description: "ARN of Shield callback Lambda for registration"
+    Value: !GetAtt ShieldCallbackFunction.Arn
+    Export:
+      Name: !Sub "${AWS::StackName}-ShieldCallbackLambdaArn"
+
   HealthCheckUrl:
     Description: "Health check endpoint URL"
     Value: !Sub 'https://${StitchApiGateway}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/v1/health'
