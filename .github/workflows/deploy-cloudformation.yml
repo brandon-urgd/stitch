@@ -608,9 +608,7 @@ jobs:
             echo "🔍 Using Shield registration Lambda ARN: $SHIELD_REGISTRATION_ARN"
             
             # Call Shield registration Lambda using Python
-            export CALLBACK_ARN
-            export SHIELD_REGISTRATION_ARN
-            python3 - <<'PYCODE'
+            cat > /tmp/register_shield.py << 'EOF'
 import json
 import os
 import boto3
@@ -627,19 +625,20 @@ response = lambda_client.invoke(
 )
 result = json.loads(response['Payload'].read())
 print(json.dumps(result, indent=2))
-PYCODE
+EOF
+            python3 /tmp/register_shield.py > response.json
             
             # Check registration response
             if [ -f response.json ]; then
               REGISTRATION_SUCCESS=$(cat response.json | jq -r '.body.registration_successful')
               if [ "$REGISTRATION_SUCCESS" = "true" ]; then
                 echo "✅ Shield registration successful after stack creation"
-                rm -f response.json
+                rm -f response.json /tmp/register_shield.py
               else
                 echo "❌ Shield registration failed after stack creation"
                 echo "🔍 Registration response:"
                 cat response.json
-                rm -f response.json
+                rm -f response.json /tmp/register_shield.py
                 exit 1
               fi
             else
