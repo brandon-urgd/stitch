@@ -610,6 +610,11 @@ jobs:
             # Call Shield registration Lambda using Python script
             export CALLBACK_ARN
             export SHIELD_REGISTRATION_ARN
+            export APP_NAME="stitch"
+            
+            # Install boto3 if not available
+            pip3 install boto3 --quiet
+            
             python3 scripts/register-with-shield.py > response.json
             
             # Check registration response
