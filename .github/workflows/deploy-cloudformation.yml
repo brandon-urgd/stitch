@@ -611,22 +611,9 @@ jobs:
             python3 -c "
             import json
             import boto3
-            
-            # Create the payload
-            payload = {
-                'action': 'register',
-                'app_name': 'stitch',
-                'callback_lambda_arn': '$CALLBACK_ARN'
-            }
-            
-            # Invoke the Lambda
+            payload = {'action': 'register', 'app_name': 'stitch', 'callback_lambda_arn': '$CALLBACK_ARN'}
             lambda_client = boto3.client('lambda', region_name='us-west-2')
-            response = lambda_client.invoke(
-                FunctionName='$SHIELD_REGISTRATION_ARN',
-                Payload=json.dumps(payload)
-            )
-            
-            # Print the response
+            response = lambda_client.invoke(FunctionName='$SHIELD_REGISTRATION_ARN', Payload=json.dumps(payload))
             result = json.loads(response['Payload'].read())
             print(json.dumps(result, indent=2))
             " > response.json
