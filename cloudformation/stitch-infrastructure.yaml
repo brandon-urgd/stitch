@@ -398,6 +398,7 @@ Resources:
       Environment:
         Variables:
           BUCKET_NAME: !Ref StitchStorageBucket
+          STATUS_TABLE_NAME: !Ref ConversionStatusTable
           ENVIRONMENT: !Ref Environment
           VERSION: !Ref GitCommit
       DeadLetterConfig:
