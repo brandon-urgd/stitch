@@ -31,6 +31,9 @@ def lambda_handler(event, context):
         logger.info("=" * 80)
         logger.info(f"Full event structure: {json.dumps(event, default=str, indent=2)}")
         logger.info(f"Event keys: {list(event.keys())}")
+        logger.info(f"Event type: {type(event)}")
+        logger.info(f"Event source: {event.get('source', 'NO_SOURCE')}")
+        logger.info(f"Event detail-type: {event.get('detail-type', 'NO_DETAIL_TYPE')}")
         
         # Parse S3 Object Tags Added event structure
         # S3 Object Tags Added events have this structure:
