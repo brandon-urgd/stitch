@@ -402,7 +402,6 @@ jobs:
           {"ParameterKey": "ShieldBucketName", "ParameterValue": "$SHIELD_BUCKET_NAME"},
           {"ParameterKey": "ShieldBucketArn", "ParameterValue": "$SHIELD_BUCKET_ARN"},
           {"ParameterKey": "ShieldEventBridgeRuleArn", "ParameterValue": "$SHIELD_EVENTBRIDGE_RULE_ARN"},
-          {"ParameterKey": "ShieldRegistrationLambdaArn", "ParameterValue": "$SHIELD_REGISTRATION_ARN"},
           {"ParameterKey": "AcmCertArnApiRegion", "ParameterValue": "arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935"},
           {"ParameterKey": "AcmCertArnCloudFront", "ParameterValue": "arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47"},
           {"ParameterKey": "UrgdDevHostedZoneId", "ParameterValue": "Z01725332W8W14423YXSC"},
