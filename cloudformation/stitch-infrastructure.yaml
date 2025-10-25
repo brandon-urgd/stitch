@@ -168,6 +168,11 @@ Resources:
   # KMS Key for DynamoDB encryption
   DynamoDBKMSKey:
     Type: AWS::KMS::Key
+    DependsOn:
+      - LambdaExecutionRole
+      - UploadUrlGeneratorRole
+      - StatusCheckerRole
+      - ShieldCallbackRole
     Properties:
       Description: !Sub 'KMS key for DynamoDB encryption - Stitch ${Environment}'
       KeyPolicy:
