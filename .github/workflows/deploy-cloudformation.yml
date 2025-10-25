@@ -607,15 +607,10 @@ jobs:
             # Use Shield registration Lambda ARN from environment variable
             echo "🔍 Using Shield registration Lambda ARN: $SHIELD_REGISTRATION_ARN"
             
-            # Call Shield registration Lambda using Python
-            python3 -c "
-import json, os, boto3
-payload = {'action': 'register', 'app_name': 'stitch', 'callback_lambda_arn': '$CALLBACK_ARN'}
-lambda_client = boto3.client('lambda', region_name='us-west-2')
-response = lambda_client.invoke(FunctionName='$SHIELD_REGISTRATION_ARN', Payload=json.dumps(payload))
-result = json.loads(response['Payload'].read())
-print(json.dumps(result, indent=2))
-" > response.json
+            # Call Shield registration Lambda using Python script
+            export CALLBACK_ARN
+            export SHIELD_REGISTRATION_ARN
+            python3 scripts/register-with-shield.py > response.json
             
             # Check registration response
             if [ -f response.json ]; then
