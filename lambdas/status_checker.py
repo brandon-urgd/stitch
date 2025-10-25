@@ -72,7 +72,7 @@ def lambda_handler(event, context):
                 'body': json.dumps({
                     'status': 'ready',
                     'download_url': download_url,
-                    'stitch_count': item.get('stitch_count', 0),
+                    'stitch_count': int(item.get('stitch_count', 0)),
                     'quality': item.get('quality', 'unknown'),
                     'message': 'Conversion complete'
                 })
