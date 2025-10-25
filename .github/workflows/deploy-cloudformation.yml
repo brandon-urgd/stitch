@@ -161,6 +161,7 @@ jobs:
   deploy-layer:
     runs-on: ubuntu-latest
     needs: [version, security-checks]
+    if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
     outputs:
       layer_version: ${{ steps.upload_layer.outputs.LAYER_VERSION }}
     steps:
@@ -207,6 +208,7 @@ jobs:
   build-shield-lambdas:
     runs-on: ubuntu-latest
     needs: [version, security-checks]
+    if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -460,6 +462,7 @@ jobs:
         echo "📁 Website files ready for upload to S3 bucket"
         
     - name: Build Lambda package
+      if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
       run: |
         VERSION="${{ needs.version.outputs.version }}"
         echo "🔨 Building Lambda package for version: $VERSION"
