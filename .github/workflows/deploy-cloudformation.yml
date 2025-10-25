@@ -318,13 +318,13 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ secrets.AWS_REGION || 'us-west-2' }}
 
-    - name: Register with Shield
+    - name: Prepare Shield Registration
       if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
       run: |
         VERSION="${{ needs.version.outputs.version }}"
-        echo "📝 Registering Stitch with Shield for version: $VERSION"
+        echo "📝 Preparing Shield registration for version: $VERSION"
         
-        # Get Shield registration Lambda ARN from SSM
+        # Get Shield registration Lambda ARN from SSM (Shield is always in prod)
         echo "🔍 Getting Shield registration Lambda ARN..."
         SHIELD_REGISTRATION_ARN=$(aws ssm get-parameter \
           --name "/urgd/shield/registration_function_arn" \
@@ -344,95 +344,11 @@ jobs:
         fi
         
         echo "✅ Shield registration Lambda ARN: $SHIELD_REGISTRATION_ARN"
+        echo "SHIELD_REGISTRATION_ARN=$SHIELD_REGISTRATION_ARN" >> $GITHUB_ENV
         
-        # Get Stitch callback Lambda ARN from CloudFormation outputs (if stack exists)
-        echo "🔍 Getting Stitch callback Lambda ARN..."
-        STACK_NAME="urgd-stitch-${{ env.ENVIRONMENT }}"
-        
-        if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region us-west-2 >/dev/null 2>&1; then
-          CALLBACK_ARN=$(aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" \
-            --query 'Stacks[0].Outputs[?OutputKey==`ShieldCallbackLambdaArn`].OutputValue' \
-            --output text \
-            --region us-west-2)
-          
-          if [ "$CALLBACK_ARN" = "None" ] || [ -z "$CALLBACK_ARN" ]; then
-            echo "⚠️  Stitch callback Lambda ARN not found in stack outputs"
-            echo "🔍 Available outputs:"
-            aws cloudformation describe-stacks \
-              --stack-name "$STACK_NAME" \
-              --query 'Stacks[0].Outputs[].{Key:OutputKey,Value:OutputValue}' \
-              --output table \
-              --region us-west-2
-            echo "ℹ️  This is expected for first deployment - will register after stack creation"
-            echo "SKIP_REGISTRATION=true" >> $GITHUB_ENV
-          else
-            echo "✅ Stitch callback Lambda ARN: $CALLBACK_ARN"
-            echo "SKIP_REGISTRATION=false" >> $GITHUB_ENV
-          fi
-        else
-          echo "ℹ️  Stitch stack doesn't exist yet - will register after stack creation"
-          echo "SKIP_REGISTRATION=true" >> $GITHUB_ENV
-        fi
-        
-        # Register with Shield if callback Lambda exists
-        if [ "$SKIP_REGISTRATION" = "false" ]; then
-          echo "🔗 Registering Stitch with Shield..."
-          
-          # Call Shield registration Lambda using Python
-          python3 -c "
-          import json
-          import boto3
-          
-          # Create the payload
-          payload = {
-              'action': 'register',
-              'app_name': 'stitch',
-              'callback_lambda_arn': '$CALLBACK_ARN'
-          }
-          
-          # Invoke the Lambda
-          lambda_client = boto3.client('lambda', region_name='us-west-2')
-          response = lambda_client.invoke(
-              FunctionName='$SHIELD_REGISTRATION_ARN',
-              Payload=json.dumps(payload)
-          )
-          
-          # Print the response
-          result = json.loads(response['Payload'].read())
-          print(json.dumps(result, indent=2))
-          " > response.json
-          
-          # Check registration response
-          if [ -f response.json ]; then
-            REGISTRATION_SUCCESS=$(cat response.json | jq -r '.body.registration_successful')
-            if [ "$REGISTRATION_SUCCESS" = "true" ]; then
-              echo "✅ Shield registration successful"
-              
-              # Extract Shield resources from response
-              SHIELD_BUCKET_NAME=$(cat response.json | jq -r '.body.shield_bucket_name')
-              SHIELD_BUCKET_ARN=$(cat response.json | jq -r '.body.shield_bucket_arn')
-              
-              echo "✅ Shield resources received:"
-              echo "  - Bucket Name: $SHIELD_BUCKET_NAME"
-              echo "  - Bucket ARN: $SHIELD_BUCKET_ARN"
-              
-              # Store for parameter file generation
-              echo "SHIELD_BUCKET_NAME=$SHIELD_BUCKET_NAME" >> $GITHUB_ENV
-              echo "SHIELD_BUCKET_ARN=$SHIELD_BUCKET_ARN" >> $GITHUB_ENV
-            else
-              echo "❌ Shield registration failed"
-              echo "🔍 Registration response:"
-              cat response.json
-              exit 1
-            fi
-          else
-            echo "❌ No response from Shield registration Lambda"
-            exit 1
-          fi
-        else
-          echo "⏭️  Skipping Shield registration - will register after stack creation"
-        fi
+        # Always register after stack creation since callback Lambda doesn't exist yet
+        echo "ℹ️  Will register with Shield after stack creation (callback Lambda doesn't exist yet)"
+        echo "SKIP_REGISTRATION=true" >> $GITHUB_ENV
 
     - name: Generate parameter files
       if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
@@ -469,6 +385,7 @@ jobs:
         echo "  - Bucket Name: $SHIELD_BUCKET_NAME"
         echo "  - Bucket ARN: $SHIELD_BUCKET_ARN"
         echo "  - EventBridge Rule ARN: $SHIELD_EVENTBRIDGE_RULE_ARN"
+        echo "  - Registration Lambda ARN: $SHIELD_REGISTRATION_ARN"
         
         mkdir -p parameter-files
         
@@ -485,6 +402,7 @@ jobs:
           {"ParameterKey": "ShieldBucketName", "ParameterValue": "$SHIELD_BUCKET_NAME"},
           {"ParameterKey": "ShieldBucketArn", "ParameterValue": "$SHIELD_BUCKET_ARN"},
           {"ParameterKey": "ShieldEventBridgeRuleArn", "ParameterValue": "$SHIELD_EVENTBRIDGE_RULE_ARN"},
+          {"ParameterKey": "ShieldRegistrationLambdaArn", "ParameterValue": "$SHIELD_REGISTRATION_ARN"},
           {"ParameterKey": "AcmCertArnApiRegion", "ParameterValue": "arn:aws:acm:us-west-2:198919428218:certificate/1527d0ac-b0e3-4d3b-b003-a3234ca35935"},
           {"ParameterKey": "AcmCertArnCloudFront", "ParameterValue": "arn:aws:acm:us-east-1:198919428218:certificate/1bb45d38-488a-4799-839c-2b9895da7f47"},
           {"ParameterKey": "UrgdDevHostedZoneId", "ParameterValue": "Z01725332W8W14423YXSC"},
@@ -687,12 +605,8 @@ jobs:
           if [ "$CALLBACK_ARN" != "None" ] && [ -n "$CALLBACK_ARN" ]; then
             echo "✅ Stitch callback Lambda ARN: $CALLBACK_ARN"
             
-            # Get Shield registration Lambda ARN from SSM
-            SHIELD_REGISTRATION_ARN=$(aws ssm get-parameter \
-              --name "/urgd/shield/registration_function_arn" \
-              --query 'Parameter.Value' \
-              --output text \
-              --region us-west-2)
+            # Use Shield registration Lambda ARN from environment variable
+            echo "🔍 Using Shield registration Lambda ARN: $SHIELD_REGISTRATION_ARN"
             
             # Call Shield registration Lambda using Python
             python3 -c "

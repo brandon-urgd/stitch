@@ -93,6 +93,10 @@ Parameters:
     Type: String
     Description: 'Shield EventBridge rule ARN from SSM Parameter Store'
 
+  ShieldRegistrationLambdaArn:
+    Type: String
+    Description: 'Shield registration Lambda ARN from SSM Parameter Store'
+
 # Conditions
 Conditions:
   IsProdEnvironment:
