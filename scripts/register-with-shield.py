@@ -29,9 +29,10 @@ def main():
             'callback_lambda_arn': callback_arn
         }
         
-        print(f"🔍 Registering Stitch with Shield...")
-        print(f"   Callback ARN: {callback_arn}")
-        print(f"   Shield Registration ARN: {shield_registration_arn}")
+        # Log to stderr so it doesn't interfere with JSON output
+        print(f"🔍 Registering Stitch with Shield...", file=sys.stderr)
+        print(f"   Callback ARN: {callback_arn}", file=sys.stderr)
+        print(f"   Shield Registration ARN: {shield_registration_arn}", file=sys.stderr)
         
         # Call Shield registration Lambda
         lambda_client = boto3.client('lambda', region_name='us-west-2')
@@ -42,18 +43,20 @@ def main():
         
         # Parse response
         result = json.loads(response['Payload'].read())
-        print(json.dumps(result, indent=2))
+        
+        # Output only JSON to stdout for jq parsing
+        print(json.dumps(result))
         
         # Check if registration was successful
         if result.get('body', {}).get('registration_successful'):
-            print("✅ Shield registration successful")
+            print("✅ Shield registration successful", file=sys.stderr)
             sys.exit(0)
         else:
-            print("❌ Shield registration failed")
+            print("❌ Shield registration failed", file=sys.stderr)
             sys.exit(1)
             
     except Exception as e:
-        print(f"❌ Error during Shield registration: {str(e)}")
+        print(f"❌ Error during Shield registration: {str(e)}", file=sys.stderr)
         sys.exit(1)
 
 if __name__ == "__main__":

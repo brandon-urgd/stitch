@@ -612,8 +612,8 @@ jobs:
             export SHIELD_REGISTRATION_ARN
             export APP_NAME="stitch"
             
-            # Install boto3 if not available
-            pip3 install boto3 --quiet
+            # Install boto3 if not available (suppress all output except errors)
+            pip3 install boto3 --quiet --disable-pip-version-check 2>/dev/null || pip3 install boto3 --quiet
             
             python3 scripts/register-with-shield.py > response.json
             
