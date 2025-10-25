@@ -187,18 +187,18 @@ Resources:
               - kms:Decrypt
               - kms:GenerateDataKey
             Resource: '*'
-          - Sid: Allow Stitch Lambda Functions
+          - Sid: Allow Lambda Functions
             Effect: Allow
             Principal:
-              AWS: '*'
-            Condition:
-              StringLike:
-                aws:PrincipalArn: !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-*-role-${Environment}'
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey
               - kms:DescribeKey
             Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:ViaService': !Sub 'dynamodb.${AWS::Region}.amazonaws.com'
       Tags:
         - Key: brand
           Value: urgd
