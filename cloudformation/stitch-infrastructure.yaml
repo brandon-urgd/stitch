@@ -194,6 +194,7 @@ Resources:
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-upload-url-generator-role-${Environment}'
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-status-checker-role-${Environment}'
                 - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-shield-callback-role-${Environment}'
+                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-lambda-role-${Environment}'
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey
