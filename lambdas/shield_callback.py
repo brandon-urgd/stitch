@@ -32,50 +32,52 @@ def lambda_handler(event, context):
         logger.info(f"Full event structure: {json.dumps(event, default=str, indent=2)}")
         logger.info(f"Event keys: {list(event.keys())}")
         
-        # Parse EventBridge event structure
-        # GuardDuty events have this structure:
+        # Parse S3 Object Tagging event structure
+        # S3 Object Tagging events have this structure:
         # {
         #   "detail": {
-        #     "type": "Malware:S3/Threat",
-        #     "service": {
-        #       "additionalInfo": {
-        #         "scanStatus": "NO_THREATS_FOUND" or "THREATS_FOUND"
-        #       }
+        #     "bucket": {
+        #       "name": "bucket-name"
         #     },
-        #     "resource": {
-        #       "s3BucketDetails": [{"name": "bucket-name"}],
-        #       "s3ObjectDetails": [{"key": "object/key"}]
+        #     "object": {
+        #       "key": "object/key"
         #     },
-        #     "createdAt": "2024-01-01T00:00:00Z"
+        #     "tags": {
+        #       "GuardDutyMalwareScanStatus": "NO_THREATS_FOUND" or "THREATS_FOUND"
+        #     }
         #   }
         # }
         
         detail = event.get('detail', {})
         logger.info(f"Detail section: {json.dumps(detail, default=str, indent=2)}")
         
-        scan_status = detail.get('service', {}).get('additionalInfo', {}).get('scanStatus', 'UNKNOWN')
-        s3_object_details = detail.get('resource', {}).get('s3ObjectDetails', [])
-        s3_bucket_details = detail.get('resource', {}).get('s3BucketDetails', [])
-        timestamp = detail.get('createdAt', '')
-        
-        logger.info(f"Parsed scan status: {scan_status}")
-        logger.info(f"Parsed S3 object details: {s3_object_details}")
-        logger.info(f"Parsed S3 bucket details: {s3_bucket_details}")
-        logger.info(f"Parsed timestamp: {timestamp}")
-        
-        # Parse S3 object details to get bucket and key
-        if not s3_object_details:
-            logger.error("No S3 object details found in event")
-            return {'statusCode': 400, 'body': 'No S3 object details'}
-        
-        if not s3_bucket_details:
-            logger.error("No S3 bucket details found in event")
-            return {'statusCode': 400, 'body': 'No S3 bucket details'}
-        
-        object_key = s3_object_details[0].get('key', '')
-        bucket_name = s3_bucket_details[0].get('name', '')
+        # Extract file information from S3 Object Tagging event
+        bucket_name = detail.get('bucket', {}).get('name', '')
+        object_key = detail.get('object', {}).get('key', '')
+        event_tags = detail.get('tags', {})
         
         logger.info(f"Parsed - Bucket: {bucket_name}, Key: {object_key}")
+        logger.info(f"Event tags: {event_tags}")
+        
+        if not bucket_name or not object_key:
+            logger.error("Missing bucket name or object key in event")
+            return {'statusCode': 400, 'body': 'Missing S3 details'}
+        
+        # Get object tags to determine scan status (more reliable than event tags)
+        try:
+            tags_response = s3_client.get_object_tagging(
+                Bucket=bucket_name,
+                Key=object_key
+            )
+            tags = {tag['Key']: tag['Value'] for tag in tags_response.get('TagSet', [])}
+            scan_status = tags.get('GuardDutyMalwareScanStatus', 'UNKNOWN')
+            logger.info(f"Object tags: {tags}")
+            logger.info(f"Scan status from tags: {scan_status}")
+        except Exception as e:
+            logger.error(f"Failed to get object tags: {str(e)}")
+            # Fallback to event tags if available
+            scan_status = event_tags.get('GuardDutyMalwareScanStatus', 'UNKNOWN')
+            logger.info(f"Using event tags fallback - scan status: {scan_status}")
         
         # Get metadata from S3 object
         try:
