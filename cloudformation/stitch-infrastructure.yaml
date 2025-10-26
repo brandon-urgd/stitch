@@ -195,10 +195,9 @@ Resources:
               - kms:Decrypt
               - kms:GenerateDataKey
               - kms:DescribeKey
+              - kms:Encrypt
+              - kms:ReEncrypt*
             Resource: '*'
-            Condition:
-              StringEquals:
-                'kms:ViaService': !Sub 'dynamodb.${AWS::Region}.amazonaws.com'
       Tags:
         - Key: brand
           Value: urgd
@@ -481,10 +480,9 @@ Resources:
               - kms:Decrypt
               - kms:GenerateDataKey
               - kms:DescribeKey
+              - kms:Encrypt
+              - kms:ReEncrypt*
             Resource: '*'
-            Condition:
-              StringEquals:
-                'kms:ViaService': !Sub 'lambda.${AWS::Region}.amazonaws.com'
       Tags:
         - Key: brand
           Value: urgd
