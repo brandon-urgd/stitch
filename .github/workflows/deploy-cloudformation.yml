@@ -553,26 +553,29 @@ jobs:
         # Deploy the stack
         if aws cloudformation describe-stacks --stack-name $STACK_NAME --region us-west-2 >/dev/null 2>&1; then
           echo "Stack exists, updating..."
-          if aws cloudformation update-stack \
+          # Try to update the stack
+          aws cloudformation update-stack \
             --stack-name $STACK_NAME \
             --template-url "https://urgd-applicationdata.s3.us-west-2.amazonaws.com/stitch/cloudformation/$PARAM_VERSION/stitch-infrastructure.yaml" \
             --parameters file://$TEMP_PARAM_FILE \
             --capabilities CAPABILITY_NAMED_IAM \
-            --region us-west-2 2>&1 | tee /tmp/update-output.log; then
+            --region us-west-2 2>&1 | tee /tmp/update-output.log
+          
+          UPDATE_EXIT_CODE=${PIPESTATUS[0]}
+          
+          # Check if the update was successful or if no updates were needed
+          if [ $UPDATE_EXIT_CODE -eq 0 ]; then
             echo "✅ Stack update initiated"
             echo "⏳ Waiting for stack update to complete..."
             aws cloudformation wait stack-update-complete \
               --stack-name $STACK_NAME \
               --region us-west-2
+          elif grep -q "No updates are to be performed" /tmp/update-output.log; then
+            echo "✅ Stack is already up to date - no changes needed"
           else
-            # Check if the error is "No updates are to be performed"
-            if grep -q "No updates are to be performed" /tmp/update-output.log; then
-              echo "✅ Stack is already up to date - no changes needed"
-            else
-              echo "❌ Stack update failed"
-              cat /tmp/update-output.log
-              exit 1
-            fi
+            echo "❌ Stack update failed"
+            cat /tmp/update-output.log
+            exit 1
           fi
         else
           echo "Stack does not exist, creating..."
