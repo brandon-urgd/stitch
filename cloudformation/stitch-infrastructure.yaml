@@ -1233,6 +1233,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       RoleName: !Sub 'urgd-stitch-upload-url-generator-role-${Environment}'
+      # Requires KMS access so DynamoDB writes can decrypt the table key
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
