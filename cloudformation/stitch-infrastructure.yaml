@@ -476,16 +476,15 @@ Resources:
           - Sid: Allow Lambda Functions
             Effect: Allow
             Principal:
-              AWS: 
-                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-upload-url-generator-role-${Environment}'
-                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-status-checker-role-${Environment}'
-                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-shield-callback-role-${Environment}'
-                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/urgd-stitch-lambda-role-${Environment}'
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
             Action:
               - kms:Decrypt
               - kms:GenerateDataKey
               - kms:DescribeKey
             Resource: '*'
+            Condition:
+              StringEquals:
+                'kms:ViaService': !Sub 'lambda.${AWS::Region}.amazonaws.com'
       Tags:
         - Key: brand
           Value: urgd
