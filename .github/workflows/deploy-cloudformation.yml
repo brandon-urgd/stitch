@@ -809,6 +809,25 @@ jobs:
         fi
         echo "🔗 API Gateway URL: $API_URL"
         
+        # Deploy API Gateway to ensure latest configuration is active
+        echo "🚀 Deploying API Gateway to $ENVIRONMENT stage..."
+        API_GATEWAY_ID=$(aws apigateway get-rest-apis \
+          --region "$REGION" \
+          --query "items[?name=='urgd-stitch-svg-converter-api-$ENVIRONMENT'].id" \
+          --output text)
+        
+        if [ "$API_GATEWAY_ID" != "None" ] && [ -n "$API_GATEWAY_ID" ]; then
+          DEPLOYMENT_ID=$(aws apigateway create-deployment \
+            --rest-api-id "$API_GATEWAY_ID" \
+            --stage-name "$ENVIRONMENT" \
+            --region "$REGION" \
+            --query 'id' \
+            --output text)
+          echo "✅ API Gateway deployed successfully (Deployment ID: $DEPLOYMENT_ID)"
+        else
+          echo "⚠️  API Gateway not found - skipping deployment"
+        fi
+        
         # Get CloudFront URL (use custom domain if available)
         CLOUDFRONT_URL=$(aws cloudformation describe-stacks \
           --stack-name "$STACK_NAME" \
