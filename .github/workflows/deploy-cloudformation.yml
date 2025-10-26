@@ -264,7 +264,8 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [version, security-checks, deploy-layer, build-shield-lambdas]
+    needs: [version, security-checks]
+    if: always() && (needs.version.result == 'success' && needs.security-checks.result == 'success')
     
     steps:
     - name: Checkout code
