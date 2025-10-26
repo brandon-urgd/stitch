@@ -1255,6 +1255,8 @@ Resources:
               - Effect: Allow
                 Action:
                   - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:GetItem
                 Resource: !GetAtt ConversionStatusTable.Arn
               - Effect: Allow
                 Action:
@@ -1264,8 +1266,18 @@ Resources:
                 Action:
                   - s3:PutObject
                   - s3:PutObjectAcl
-                Resource: 
+                Resource:
                   - "arn:aws:s3:::urgd-shield-quarantine-*/*"
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                  - kms:GenerateDataKeyWithoutPlaintext
+                  - kms:GenerateDataKey*
+                  - kms:DescribeKey
+                  - kms:ReEncrypt*
+                Resource: !GetAtt StitchKmsKey.Arn
       Tags:
         - Key: brand
           Value: urgd
