@@ -502,6 +502,7 @@ jobs:
         echo "📦 Package size: $(du -h artifacts/stitch-function-${VERSION}.zip | cut -f1)"
         
     - name: Upload artifacts to S3
+      if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
       run: |
         VERSION="${{ needs.version.outputs.version }}"
         echo "📦 Uploading artifacts for version: $VERSION"
