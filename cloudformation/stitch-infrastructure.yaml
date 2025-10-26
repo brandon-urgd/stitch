@@ -1468,6 +1468,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:PutObject
+                  - s3:PutObjectTagging
                 Resource:
                   - !Sub '${StitchProcessingBucket.Arn}/*'
               - Effect: Allow
