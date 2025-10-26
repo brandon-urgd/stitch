@@ -789,13 +789,15 @@ jobs:
           --region "$REGION")
         
         if [ -z "$API_GATEWAY_ID" ] || [ "$API_GATEWAY_ID" = "None" ]; then
-          echo "❌ Could not get API Gateway ID from CloudFormation outputs"
-          echo "🔍 Available outputs:"
-          aws cloudformation describe-stacks \
-            --stack-name "$STACK_NAME" \
-            --query 'Stacks[0].Outputs' \
-            --output table \
-            --region "$REGION"
+          echo "⚠️  ApiGatewayId output missing; falling back to REST API lookup"
+          API_GATEWAY_ID=$(aws apigateway get-rest-apis \
+            --region "$REGION" \
+            --query "items[?name=='urgd-stitch-svg-converter-api-$ENVIRONMENT'].id" \
+            --output text)
+        fi
+        
+        if [ -z "$API_GATEWAY_ID" ] || [ "$API_GATEWAY_ID" = "None" ]; then
+          echo "❌ Could not resolve API Gateway ID"
           exit 1
         fi
         
