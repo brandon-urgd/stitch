@@ -82,13 +82,11 @@ Parameters:
 
   # Shield Integration Parameters
   ShieldBucketName:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: '/urgd/shield/quarantine_bucket_name'
+    Type: String
     Description: 'Shield quarantine bucket name from SSM Parameter Store'
 
   ShieldBucketArn:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: '/urgd/shield/quarantine_bucket_arn'
+    Type: String
     Description: 'Shield quarantine bucket ARN from SSM Parameter Store'
 
   ShieldEventBridgeRuleArn:
