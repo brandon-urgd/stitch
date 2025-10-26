@@ -83,10 +83,12 @@ Parameters:
   # Shield Integration Parameters
   ShieldBucketName:
     Type: String
+    Default: '{{resolve:ssm:/urgd/shield/quarantine_bucket_name}}'
     Description: 'Shield quarantine bucket name from SSM Parameter Store'
 
   ShieldBucketArn:
     Type: String
+    Default: '{{resolve:ssm:/urgd/shield/quarantine_bucket_arn}}'
     Description: 'Shield quarantine bucket ARN from SSM Parameter Store'
 
   ShieldEventBridgeRuleArn:
@@ -1278,7 +1280,9 @@ Resources:
                   - kms:GenerateDataKey*
                   - kms:DescribeKey
                   - kms:ReEncrypt*
-                Resource: !GetAtt StitchKmsKey.Arn
+                Resource:
+                  - !GetAtt StitchKmsKey.Arn
+                  - !GetAtt DynamoDBKMSKey.Arn
       Tags:
         - Key: brand
           Value: urgd
