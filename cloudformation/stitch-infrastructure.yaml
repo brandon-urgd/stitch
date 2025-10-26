@@ -379,6 +379,9 @@ Resources:
   # Lambda Function
   StitchSvgConverterFunction:
     Type: AWS::Lambda::Function
+    DependsOn: 
+      - StitchLambdaLogGroup
+      - StitchKmsKeyAlias
     Properties:
       FunctionName: !Sub 'urgd-stitch-svg-converter-v1-${Environment}-${GitCommit}'
       Runtime: python3.12
@@ -512,12 +515,14 @@ Resources:
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
-      - StitchSvgConverterFunction
       - StitchKmsKeyAlias
 
   # Health Check Lambda Function
   StitchHealthCheckFunction:
     Type: AWS::Lambda::Function
+    DependsOn: 
+      - HealthCheckLogGroup
+      - StitchKmsKeyAlias
     Properties:
       FunctionName: !Sub 'urgd-stitch-health-check-v1-${Environment}-${GitCommit}'
       Runtime: python3.12
@@ -551,7 +556,7 @@ Resources:
           Value: !Ref AWS::StackName
 
   # CloudWatch Log Group for Health Check Function
-  StitchHealthCheckLogGroup:
+  HealthCheckLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: !If [IsProdEnvironment, Retain, Delete]
     UpdateReplacePolicy: !If [IsProdEnvironment, Retain, Delete]
@@ -560,7 +565,6 @@ Resources:
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
-      - StitchHealthCheckFunction
       - StitchKmsKeyAlias
 
   # Dead Letter Queue for Lambda functions
@@ -1277,6 +1281,9 @@ Resources:
   # Upload URL Generator Lambda Function
   UploadUrlGeneratorFunction:
     Type: AWS::Lambda::Function
+    DependsOn: 
+      - UploadUrlGeneratorLogGroup
+      - StitchKmsKeyAlias
     Properties:
       FunctionName: !Sub 'urgd-stitch-upload-url-generator-${Environment}-${GitCommit}'
       Runtime: python3.12
@@ -1356,6 +1363,9 @@ Resources:
   # Status Checker Lambda Function
   StatusCheckerFunction:
     Type: AWS::Lambda::Function
+    DependsOn: 
+      - StatusCheckerLogGroup
+      - StitchKmsKeyAlias
     Properties:
       FunctionName: !Sub 'urgd-stitch-status-checker-${Environment}-${GitCommit}'
       Runtime: python3.12
@@ -1461,6 +1471,9 @@ Resources:
   # Shield Callback Lambda Function
   ShieldCallbackFunction:
     Type: AWS::Lambda::Function
+    DependsOn: 
+      - ShieldCallbackLogGroup
+      - StitchKmsKeyAlias
     Properties:
       FunctionName: !Sub 'urgd-stitch-shield-callback-${Environment}-${GitCommit}'
       Runtime: python3.12
@@ -1517,7 +1530,6 @@ Resources:
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
-      - UploadUrlGeneratorFunction
       - StitchKmsKeyAlias
 
   StatusCheckerLogGroup:
@@ -1529,7 +1541,6 @@ Resources:
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
-      - StatusCheckerFunction
       - StitchKmsKeyAlias
 
   ShieldCallbackLogGroup:
@@ -1541,7 +1552,6 @@ Resources:
       RetentionInDays: !If [IsProdEnvironment, 30, 7]
       KmsKeyId: !GetAtt StitchKmsKey.Arn
     DependsOn: 
-      - ShieldCallbackFunction
       - StitchKmsKeyAlias
 
   # CloudWatch Alarms for Shield Integration
