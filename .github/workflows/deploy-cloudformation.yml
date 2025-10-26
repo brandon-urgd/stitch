@@ -322,7 +322,6 @@ jobs:
         aws-region: ${{ secrets.AWS_REGION || 'us-west-2' }}
 
     - name: Prepare Shield Registration
-      if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
       run: |
         VERSION="${{ needs.version.outputs.version }}"
         echo "📝 Preparing Shield registration for version: $VERSION"
