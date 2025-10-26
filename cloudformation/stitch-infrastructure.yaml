@@ -1371,6 +1371,16 @@ Resources:
                 Resource: !GetAtt ConversionStatusTable.Arn
               - Effect: Allow
                 Action:
+                  - kms:Decrypt
+                  - kms:Encrypt
+                  - kms:GenerateDataKey
+                  - kms:GenerateDataKeyWithoutPlaintext
+                  - kms:GenerateDataKey*
+                  - kms:DescribeKey
+                  - kms:ReEncrypt*
+                Resource: !GetAtt DynamoDBKMSKey.Arn
+              - Effect: Allow
+                Action:
                   - s3:GetObject
                 Resource: !Sub '${StitchStorageBucket.Arn}/*'
               - Effect: Allow
